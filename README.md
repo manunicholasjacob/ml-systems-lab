@@ -128,6 +128,18 @@ mlsys report runs/my-sweep --format latex  # booktabs, ready to paste
 mlsys report runs/my-sweep --full          # REPORT.md + PNG/PDF figures
 ```
 
+5. Two more tools:
+
+```
+mlsys membw --device pi5 --config configs/lab.yaml
+    # measures the device's achievable DRAM read ceiling and prints the
+    # dram_peak_GBs line to put in the config, with a stability check that
+    # flags a machine that was not idle
+
+mlsys compare runs/before runs/after --metric decode_tps
+    # same workloads in two result sets, side by side with the ratio
+```
+
 ## Measurement methodology
 
 The rules encoded in this framework, and why, are documented in

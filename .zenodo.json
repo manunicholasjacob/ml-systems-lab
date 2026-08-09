@@ -1,0 +1,25 @@
+{
+  "title": "ML Systems Lab: reproducible ML inference benchmarking across heterogeneous hardware",
+  "description": "A benchmarking framework for ML inference across laptops, single-board computers and servers. One config file and one command produce self-describing JSON records carrying hardware, backend versions, metrics (TTFT, prefill/decode throughput, latency percentiles, memory), and physical telemetry (per-rail power, temperature, throttle state, CPU utilization), plus publication-quality tables and figures. Ships with the real measurements behind an IEEE Transactions on Computers submission and reproduces that paper's roofline fits exactly.",
+  "creators": [
+    {
+      "name": "Jacob, Manu Nicholas",
+      "orcid": "0009-0007-6589-6572"
+    }
+  ],
+  "license": "mit",
+  "upload_type": "software",
+  "access_right": "open",
+  "keywords": [
+    "benchmarking", "inference", "llama.cpp", "onnxruntime", "edge AI",
+    "Raspberry Pi", "roofline model", "energy measurement", "reproducibility"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "10.5281/zenodo.21842493",
+      "relation": "references",
+      "resource_type": "software",
+      "scheme": "doi"
+    }
+  ]
+}

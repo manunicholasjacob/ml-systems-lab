@@ -140,6 +140,101 @@ def _cmd_report(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_membw(args: argparse.Namespace) -> int:
+    """Measure the DRAM read ceiling on a device, for its dram_peak_GBs config entry."""
+    from . import devices as device_registry
+    from .membw import RESULT_BEGIN, RESULT_END
+
+    if not args.device or args.device == "local":
+        from .membw import measure
+
+        result = measure(working_set_mb=args.mb, reps=args.reps)
+    else:
+        if not args.config:
+            sys.stderr.write("--device needs --config to know how to reach it\n")
+            return 1
+        from .config import load
+
+        config = load(args.config)
+        if args.device not in config.devices:
+            sys.stderr.write(f"unknown device '{args.device}' in {args.config}\n")
+            return 1
+        device = device_registry.from_config(args.device, config.devices[args.device])
+        agent_result = device.execute({
+            "kind": "command",
+            "argv": [device.python_executable, "-m", "mlsyslab.membw",
+                     "--reps", str(args.reps)] + (["--mb", str(args.mb)] if args.mb else []),
+            "env": {"PYTHONPATH": device.package_root()},
+            "timeout_s": 900,
+            "sample_power": False,
+        })
+        stdout = agent_result.get("stdout") or ""
+        start, end = stdout.find(RESULT_BEGIN), stdout.find(RESULT_END)
+        if start == -1 or end == -1:
+            sys.stderr.write(f"membw failed on {args.device}: "
+                             f"{agent_result.get('error')}\n{stdout[-500:]}\n")
+            return 1
+        result = json.loads(stdout[start + len(RESULT_BEGIN):end].strip())
+
+    if result.get("status") != "ok":
+        sys.stderr.write(f"failed: {result.get('error')}\n")
+        return 1
+    print(f"peak read bandwidth : {result['peak_read_GBs']:.2f} GB/s "
+          f"({result['best_kernel']} kernel, {result['best_threads']} threads)")
+    print(f"copy (for context)  : {result['copy_GBs']:.2f} GB/s")
+    print(f"working set         : {result['working_set_mb']} MB, {result['reps']} reps")
+    if result.get("stability") is not None:
+        print(f"stability           : median/best = {result['stability']:.2f}")
+    if result.get("warning"):
+        print(f"\nWARNING: {result['warning']}")
+    print(f"\nput this in the device config:\n  dram_peak_GBs: {result['peak_read_GBs']:.2f}")
+    return 0
+
+
+def _cmd_compare(args: argparse.Namespace) -> int:
+    """Same workload measured in two result sets, side by side with the ratio."""
+    from .analysis import Dataset
+    from .analysis.tables import render
+
+    left = Dataset.from_directory(args.left)
+    right = Dataset.from_directory(args.right)
+    if not len(left) or not len(right):
+        sys.stderr.write("one of the directories has no successful records\n")
+        return 1
+
+    def key(row):
+        return (row["backend"], row["model"], row["quant"], row["mode"],
+                row["threads"], row["prompt_tokens"], row["output_tokens"],
+                row["context_tokens"], row["batch"])
+
+    metric = args.metric
+    left_best, right_best = {}, {}
+    for rows, best in ((left.rows, left_best), (right.rows, right_best)):
+        for row in rows:
+            if row.get(metric) is None:
+                continue
+            k = key(row)
+            if k not in best or row[metric] > best[k][metric]:
+                best[k] = row
+
+    shared = sorted(set(left_best) & set(right_best), key=lambda k: str(k))
+    if not shared:
+        sys.stderr.write(f"no workload with '{metric}' appears in both directories\n")
+        return 1
+
+    lower_is_better = metric in ("ttft_ms", "e2e_ms", "latency_ms", "load_ms")
+    headers = ["model", "mode", "thr", f"{metric} A", f"{metric} B", "B/A"]
+    rows = []
+    for k in shared:
+        a, b = left_best[k][metric], right_best[k][metric]
+        rows.append([left_best[k]["model"], left_best[k]["mode"],
+                     left_best[k]["threads"], a, b, b / a if a else None])
+    caption = (f"A = {args.left}, B = {args.right}; best '{metric}' per workload"
+               + ("; lower is better" if lower_is_better else ""))
+    print(render(headers, rows, args.format, caption=caption))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="mlsys",
@@ -174,6 +269,23 @@ def build_parser() -> argparse.ArgumentParser:
                         help="table format (default: text)")
     report.add_argument("--output", help="output directory for --full (default: <dir>/report)")
     report.set_defaults(func=_cmd_report)
+
+    membw = sub.add_parser("membw",
+                           help="measure a device's DRAM read ceiling (dram_peak_GBs)")
+    membw.add_argument("--device", help="device id from --config; omit for this machine")
+    membw.add_argument("--config", help="config file defining the device")
+    membw.add_argument("--mb", type=int, help="working set in MB")
+    membw.add_argument("--reps", type=int, default=5)
+    membw.set_defaults(func=_cmd_membw)
+
+    compare = sub.add_parser("compare", help="compare a metric across two result dirs")
+    compare.add_argument("left", help="results directory A")
+    compare.add_argument("right", help="results directory B")
+    compare.add_argument("--metric", default="decode_tps",
+                         help="flattened column to compare (default decode_tps)")
+    compare.add_argument("--format", choices=["text", "markdown", "latex"],
+                         default="text")
+    compare.set_defaults(func=_cmd_compare)
 
     return parser
 

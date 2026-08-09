@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this framework or its measurement methodology, please cite it."
+title: "ML Systems Lab: reproducible ML inference benchmarking across heterogeneous hardware"
+type: software
+authors:
+  - family-names: "Jacob"
+    given-names: "Manu Nicholas"
+    orcid: "https://orcid.org/0009-0007-6589-6572"
+repository-code: "https://github.com/manunicholasjacob/ml-systems-lab"
+license: MIT
+version: 0.1.0
+date-released: 2026-08-09
+keywords:
+  - benchmarking
+  - inference
+  - llama.cpp
+  - onnxruntime
+  - edge-ai
+  - raspberry-pi
+  - roofline
+  - energy
+  - reproducibility
