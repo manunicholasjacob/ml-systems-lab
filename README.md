@@ -37,6 +37,18 @@ R^2 = 0.980; i7-12700H: 35.7 GB/s, R^2 = 0.980).
 
 Anything a platform cannot measure is reported as absent, never as zero.
 
+## Devices exercised
+
+| Device | Route | Notes |
+|---|---|---|
+| Raspberry Pi 5 (2 GB, Cortex-A76) | SSH agent | PMIC per-rail power, throttle bits, DVFS control |
+| i7-12700H laptop (Windows) | local agent | 20-thread sweeps, up to 7B models |
+| RTX 3050 (same laptop) | ONNX Runtime DirectML | modeled as its own device; at batch 1 the GPU loses to the CPU (12.3 ms vs 3.0 ms, dispatch overhead), at batch 64 it wins 29x (9,885 vs 338 inf/s), and both facts come out of the same config file |
+
+A new machine is a config block, not code: `host`, an SSH key, and the paths to its
+models. A new accelerator is a device entry pointing at an interpreter whose ONNX
+Runtime carries the right execution provider.
+
 ## Design
 
 ```

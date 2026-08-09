@@ -20,6 +20,16 @@ devices:
     python: python3
     dram_peak_GBs: 13.98
 
+  # The same physical laptop, but inference executes on the RTX 3050 through
+  # DirectML. Modeled as its own device because the interpreter differs (DirectML
+  # and CPU onnxruntime cannot share a venv), which is exactly the difference the
+  # device abstraction is for.
+  laptop-gpu:
+    kind: local
+    python: C:/llmpc/venv311dml/Scripts/python.exe
+    onnxruntime:
+      providers: [DmlExecutionProvider]
+
 models:
   mobilenetv3s-fp32:
     quantization: fp32
@@ -43,6 +53,7 @@ models:
     quantization: int8
     paths:
       laptop: C:/llmpc/onnx/cifar100_resnet18_int8.onnx
+      laptop-gpu: C:/llmpc/onnx/cifar100_resnet18_int8.onnx
       pi5: ~/Desktop/researchpaper3/exports/CIFAR100_resnet18_CIFAR100_resnet18_20251015_162556/model_int8.onnx
 
 defaults:
@@ -56,3 +67,11 @@ matrix:
     modes: [throughput]
     threads: [4]
     batch_sizes: [1]
+
+  # GPU wiring check: the same int8 ResNet18 through DirectML on the RTX 3050.
+  - devices: [laptop-gpu]
+    models: [resnet18-int8]
+    modes: [throughput]
+    batch_sizes: [1, 64]
+    repetitions: 100
+    warmup: 20
