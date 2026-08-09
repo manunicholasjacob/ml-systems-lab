@@ -194,12 +194,18 @@ class FigureSet:
         return name
 
     def ttft(self, name: str = "fig_ttft") -> Optional[str]:
-        """Time to first token against prompt length, per device and model."""
+        """Time to first token against prompt length, per device and model.
+
+        Color follows whichever entity actually discriminates the series: with one
+        device on the plot every line would otherwise wear the same color and the
+        models would be distinguishable only by reading the labels.
+        """
         plt = _require_matplotlib()
         _style(plt)
         usable = self.dataset.having("ttft_ms", "prompt_tokens")
         if len(usable) < 2:
             return None
+        single_device = len(usable.unique("device")) == 1
 
         figure, axis = plt.subplots(figsize=(4.2, 3.2))
         labelled = False
@@ -209,10 +215,12 @@ class FigureSet:
                 continue
             prompts = [r["prompt_tokens"] for r in ordered.rows]
             ttfts = [r["ttft_ms"] for r in ordered.rows]
-            color = self.color(device)
-            axis.plot(prompts, ttfts, color=color, marker=self.marker(device),
+            series_key = model if single_device else device
+            color, marker = self.color(series_key), self.marker(series_key)
+            axis.plot(prompts, ttfts, color=color, marker=marker,
                       markeredgecolor="white", markeredgewidth=0.6)
-            axis.annotate(f"{device} {model}", xy=(prompts[-1], ttfts[-1]),
+            label = model if single_device else f"{device} {model}"
+            axis.annotate(label, xy=(prompts[-1], ttfts[-1]),
                           xytext=(5, 0), textcoords="offset points",
                           fontsize=8, color=color, va="center")
             labelled = True
