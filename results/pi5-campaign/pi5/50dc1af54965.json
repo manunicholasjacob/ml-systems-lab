@@ -1,0 +1,124 @@
+{
+  "run_id": "50dc1af54965",
+  "experiment": "pi-overnight",
+  "schema_version": "1.0",
+  "lab_version": "0.1.0",
+  "timestamp_utc": "2026-08-09T23:24:06Z",
+  "duration_s": 2.5968944120104425,
+  "status": "ok",
+  "warnings": [],
+  "tags": [],
+  "device": {
+    "device_id": "pi5",
+    "kind": "ssh",
+    "os": "Linux",
+    "os_release": "6.12.93+rpt-rpi-2712",
+    "distro": "Debian GNU/Linux 12 (bookworm)",
+    "kernel": "6.12.93+rpt-rpi-2712",
+    "machine": "aarch64",
+    "cpu": "Raspberry Pi 5 Model B Rev 1.0",
+    "cpu_flags": [
+      "asimd",
+      "asimddp",
+      "asimdhp",
+      "fphp"
+    ],
+    "logical_cores": 4,
+    "physical_cores": 4,
+    "ram_bytes": 2108489728,
+    "swap_bytes": 0,
+    "dram_peak_GBs": 13.98,
+    "board_model": "Raspberry Pi 5 Model B Rev 1.0",
+    "python": "3.11.2",
+    "compiler": "cc (Debian 12.2.0-14) 12.2.0",
+    "libc": "glibc 2.36",
+    "capabilities": {
+      "temperature": true,
+      "throttle_flags": true,
+      "cpu_freq": true,
+      "pmic": true,
+      "rapl": false,
+      "cpu_utilisation": true,
+      "peak_rss": true,
+      "dvfs_read": true,
+      "dvfs_write": true
+    }
+  },
+  "backend": {
+    "name": "onnxruntime",
+    "version": "1.24.4",
+    "execution_provider": "CPUExecutionProvider",
+    "library_versions": {}
+  },
+  "workload": {
+    "model": "resnet18-fp32",
+    "model_path": "/home/manu/Desktop/researchpaper3/exports/CIFAR100_resnet18_CIFAR100_resnet18_20251015_162556/model_fp32.onnx",
+    "quantization": "fp32",
+    "architecture": "resnet18",
+    "batch_size": 1,
+    "input_shape": [
+      1,
+      3,
+      32,
+      32
+    ]
+  },
+  "knobs": {
+    "threads": 1,
+    "repetitions": 100,
+    "warmup": 15,
+    "extra": {}
+  },
+  "metrics": {
+    "load_ms": 599.5407229929697,
+    "latency_ms_mean": 10.860879030951764,
+    "latency_ms_p50": 10.849213504116051,
+    "latency_ms_p95": 10.946410163887776,
+    "latency_ms_p99": 11.032217091997154,
+    "throughput_ips": 92.05273619600494,
+    "stdev_pct": 0.4545700065319383,
+    "extra": {
+      "latency_ms_min": 10.785889026010409,
+      "latency_ms_max": 11.08657501754351,
+      "reps": 100,
+      "warmup": 15
+    }
+  },
+  "telemetry": {
+    "temp_c_start": 50.15,
+    "temp_c_mean": 50.48000000000001,
+    "temp_c_max": 51.8,
+    "throttled": false,
+    "throttle_flags": "0x0",
+    "cpu_util_pct_mean": 16.682738669238184,
+    "cpu_util_pct_per_core": [
+      4.6,
+      3.4,
+      56.4,
+      3.1
+    ],
+    "freq_khz_mean": 2400000.0,
+    "freq_khz_min": 2400000,
+    "freq_khz_max": 2400000,
+    "sample_hz": 10.0,
+    "sample_count": 25
+  },
+  "raw": {
+    "stdout": "===MLSYSLAB-ONNX-BEGIN===\n{\"status\": \"ok\", \"onnxruntime_version\": \"1.24.4\", \"providers_used\": [\"CPUExecutionProvider\"], \"providers_unavailable\": [], \"model\": \"/home/manu/Desktop/researchpaper3/exports/CIFAR100_resnet18_CIFAR100_resnet18_20251015_162556/model_fp32.onnx\", \"inputs\": [{\"name\": \"input\", \"shape\": [1, 3, 32, 32], \"type\": \"tensor(float)\"}], \"threads\": 1, \"reps\": 100, \"warmup\": 15, \"load_ms\": 599.5407229929697, \"latency_ms_mean\": 10.860879030951764, \"latency_ms_p50\": 10.849213504116051, \"latency_ms_p95\": 10.946410163887776, \"latency_ms_p99\": 11.032217091997154, \"latency_ms_min\": 10.785889026010409, \"latency_ms_max\": 11.08657501754351, \"latency_ms_stdev\": 0.04937029852042335, \"throughput_ips\": 92.05273619600494, \"wall_s\": 1.0863338139897678}\n===MLSYSLAB-ONNX-END===\n",
+    "stderr": "\u001b[0;93m2026-08-10 00:24:04.429386951 [W:onnxruntime:Default, device_discovery.cc:325 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:92 ReadFileContents Failed to open file: \"/sys/class/drm/card1/device/vendor\"\u001b[m\n",
+    "memory_before": {
+      "MemFree": 1524908032,
+      "MemAvailable": 1543012352,
+      "SwapTotal": 0,
+      "SwapFree": 0,
+      "SwapUsed": 0
+    },
+    "memory_after": {
+      "MemFree": 1383137280,
+      "MemAvailable": 1488699392,
+      "SwapTotal": 0,
+      "SwapFree": 0,
+      "SwapUsed": 0
+    }
+  }
+}

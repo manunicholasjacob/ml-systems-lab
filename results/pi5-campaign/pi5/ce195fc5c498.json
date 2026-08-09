@@ -1,0 +1,117 @@
+{
+  "run_id": "ce195fc5c498",
+  "experiment": "pi-overnight",
+  "schema_version": "1.0",
+  "lab_version": "0.1.0",
+  "timestamp_utc": "2026-08-09T23:24:58Z",
+  "duration_s": 1.3846822339983191,
+  "status": "ok",
+  "warnings": [],
+  "tags": [],
+  "device": {
+    "device_id": "pi5",
+    "kind": "ssh",
+    "os": "Linux",
+    "os_release": "6.12.93+rpt-rpi-2712",
+    "distro": "Debian GNU/Linux 12 (bookworm)",
+    "kernel": "6.12.93+rpt-rpi-2712",
+    "machine": "aarch64",
+    "cpu": "Raspberry Pi 5 Model B Rev 1.0",
+    "cpu_flags": [
+      "asimd",
+      "asimddp",
+      "asimdhp",
+      "fphp"
+    ],
+    "logical_cores": 4,
+    "physical_cores": 4,
+    "ram_bytes": 2108489728,
+    "swap_bytes": 0,
+    "dram_peak_GBs": 13.98,
+    "board_model": "Raspberry Pi 5 Model B Rev 1.0",
+    "python": "3.11.2",
+    "compiler": "cc (Debian 12.2.0-14) 12.2.0",
+    "libc": "glibc 2.36",
+    "capabilities": {
+      "temperature": true,
+      "throttle_flags": true,
+      "cpu_freq": true,
+      "pmic": true,
+      "rapl": false,
+      "cpu_utilisation": true,
+      "peak_rss": true,
+      "dvfs_read": true,
+      "dvfs_write": true
+    }
+  },
+  "backend": {
+    "name": "onnxruntime",
+    "version": "1.24.4",
+    "execution_provider": "CPUExecutionProvider",
+    "library_versions": {}
+  },
+  "workload": {
+    "model": "mnv3s-int8",
+    "model_path": "/home/manu/Desktop/researchpaper3/exports/CIFAR100_mobilenet_v3_small_CIFAR100_mobilenet_v3_small_20251015_155545/model_int8.onnx",
+    "quantization": "int8",
+    "batch_size": 1,
+    "input_shape": [
+      1,
+      3,
+      32,
+      32
+    ]
+  },
+  "knobs": {
+    "threads": 4,
+    "repetitions": 300,
+    "warmup": 15,
+    "extra": {}
+  },
+  "metrics": {
+    "load_ms": 214.00240398361348,
+    "latency_ms_mean": 0.5453713870762537,
+    "latency_ms_p50": 0.5324465018929914,
+    "latency_ms_p95": 0.6167651576106437,
+    "latency_ms_p99": 0.7396146876271814,
+    "throughput_ips": 1829.2768590762846,
+    "stdev_pct": 7.494736123482151,
+    "extra": {
+      "latency_ms_min": 0.5152060184627771,
+      "latency_ms_max": 0.9075769921764731,
+      "reps": 300,
+      "warmup": 15
+    }
+  },
+  "telemetry": {
+    "throttled": false,
+    "throttle_flags": "0x0",
+    "cpu_util_pct_mean": 24.07079646017699,
+    "cpu_util_pct_per_core": [
+      21.1,
+      20.0,
+      34.5,
+      21.3
+    ],
+    "sample_hz": 10.0,
+    "sample_count": 0
+  },
+  "raw": {
+    "stdout": "===MLSYSLAB-ONNX-BEGIN===\n{\"status\": \"ok\", \"onnxruntime_version\": \"1.24.4\", \"providers_used\": [\"CPUExecutionProvider\"], \"providers_unavailable\": [], \"model\": \"/home/manu/Desktop/researchpaper3/exports/CIFAR100_mobilenet_v3_small_CIFAR100_mobilenet_v3_small_20251015_155545/model_int8.onnx\", \"inputs\": [{\"name\": \"input\", \"shape\": [1, 3, 32, 32], \"type\": \"tensor(float)\"}], \"threads\": 4, \"reps\": 300, \"warmup\": 15, \"load_ms\": 214.00240398361348, \"latency_ms_mean\": 0.5453713870762537, \"latency_ms_p50\": 0.5324465018929914, \"latency_ms_p95\": 0.6167651576106437, \"latency_ms_p99\": 0.7396146876271814, \"latency_ms_min\": 0.5152060184627771, \"latency_ms_max\": 0.9075769921764731, \"latency_ms_stdev\": 0.04087414635433965, \"throughput_ips\": 1829.2768590762846, \"wall_s\": 0.16399923199787736}\n===MLSYSLAB-ONNX-END===\n",
+    "stderr": "\u001b[0;93m2026-08-10 00:24:57.602431448 [W:onnxruntime:Default, device_discovery.cc:325 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:92 ReadFileContents Failed to open file: \"/sys/class/drm/card1/device/vendor\"\u001b[m\n",
+    "memory_before": {
+      "MemFree": 1537392640,
+      "MemAvailable": 1546256384,
+      "SwapTotal": 0,
+      "SwapFree": 0,
+      "SwapUsed": 0
+    },
+    "memory_after": {
+      "MemFree": 1438711808,
+      "MemAvailable": 1502494720,
+      "SwapTotal": 0,
+      "SwapFree": 0,
+      "SwapUsed": 0
+    }
+  }
+}

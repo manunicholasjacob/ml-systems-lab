@@ -1,0 +1,123 @@
+{
+  "run_id": "a9f2be69c4b5",
+  "experiment": "pi-overnight",
+  "schema_version": "1.0",
+  "lab_version": "0.1.0",
+  "timestamp_utc": "2026-08-09T23:19:57Z",
+  "duration_s": 44.702169366995804,
+  "status": "ok",
+  "warnings": [],
+  "tags": [],
+  "device": {
+    "device_id": "pi5",
+    "kind": "ssh",
+    "os": "Linux",
+    "os_release": "6.12.93+rpt-rpi-2712",
+    "distro": "Debian GNU/Linux 12 (bookworm)",
+    "kernel": "6.12.93+rpt-rpi-2712",
+    "machine": "aarch64",
+    "cpu": "Raspberry Pi 5 Model B Rev 1.0",
+    "cpu_flags": [
+      "asimd",
+      "asimddp",
+      "asimdhp",
+      "fphp"
+    ],
+    "logical_cores": 4,
+    "physical_cores": 4,
+    "ram_bytes": 2108489728,
+    "swap_bytes": 0,
+    "dram_peak_GBs": 13.98,
+    "board_model": "Raspberry Pi 5 Model B Rev 1.0",
+    "python": "3.11.2",
+    "compiler": "cc (Debian 12.2.0-14) 12.2.0",
+    "libc": "glibc 2.36",
+    "capabilities": {
+      "temperature": true,
+      "throttle_flags": true,
+      "cpu_freq": true,
+      "pmic": true,
+      "rapl": false,
+      "cpu_utilisation": true,
+      "peak_rss": true,
+      "dvfs_read": true,
+      "dvfs_write": true
+    }
+  },
+  "backend": {
+    "name": "llamacpp",
+    "library_versions": {}
+  },
+  "workload": {
+    "model": "qwen0.5b-q4km",
+    "model_path": "~/llm/models/qwen0.5b-q4km.gguf",
+    "quantization": "Q4_K_M",
+    "prompt_tokens": 1024,
+    "output_tokens": 64
+  },
+  "knobs": {
+    "threads": 4,
+    "repetitions": 3,
+    "extra": {}
+  },
+  "metrics": {
+    "ttft_ms": 12086.11388099962,
+    "prefill_tps": 84.72533107683302,
+    "decode_tps": 22.654580577476597,
+    "e2e_latency_ms": 14906.204054015689,
+    "load_ms": 6529.935400991235,
+    "extra": {
+      "ttft_spread_pct": 0.6,
+      "requests": 3
+    }
+  },
+  "telemetry": {
+    "power_w_mean": 7.70257226248495,
+    "power_w_core": 6.202158264461933,
+    "power_w_dram": 0.08039061157958863,
+    "energy_j": 343.29523629527205,
+    "energy_per_token_mj": 1787.9960223712087,
+    "temp_c_start": 53.45,
+    "temp_c_mean": 63.19797752808989,
+    "temp_c_max": 66.1,
+    "throttled": false,
+    "throttle_flags": "0x0",
+    "cpu_util_pct_mean": 99.27945037144613,
+    "cpu_util_pct_per_core": [
+      99.3,
+      99.4,
+      99.4,
+      99.1
+    ],
+    "freq_khz_mean": 2400000.0,
+    "freq_khz_min": 2400000,
+    "freq_khz_max": 2400000,
+    "sample_hz": 10.0,
+    "sample_count": 445
+  },
+  "raw": {
+    "requests": [
+      {
+        "prompt_tokens": 1024,
+        "output_tokens": 64,
+        "ttft_ms": 12086.11388099962,
+        "e2e_latency_ms": 14906.204054015689,
+        "decode_tps": 22.339711191795644
+      },
+      {
+        "prompt_tokens": 1024,
+        "output_tokens": 64,
+        "ttft_ms": 12085.571117000654,
+        "e2e_latency_ms": 14853.727361012716,
+        "decode_tps": 22.758830949762494
+      },
+      {
+        "prompt_tokens": 1024,
+        "output_tokens": 64,
+        "ttft_ms": 12160.957848012913,
+        "e2e_latency_ms": 14941.85241300147,
+        "decode_tps": 22.654580577476597
+      }
+    ]
+  }
+}

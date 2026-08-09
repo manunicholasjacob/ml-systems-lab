@@ -1,0 +1,123 @@
+{
+  "run_id": "8bd22154dc0c",
+  "experiment": "pi-overnight",
+  "schema_version": "1.0",
+  "lab_version": "0.1.0",
+  "timestamp_utc": "2026-08-09T23:23:52Z",
+  "duration_s": 1.0297580490005203,
+  "status": "ok",
+  "warnings": [],
+  "tags": [],
+  "device": {
+    "device_id": "pi5",
+    "kind": "ssh",
+    "os": "Linux",
+    "os_release": "6.12.93+rpt-rpi-2712",
+    "distro": "Debian GNU/Linux 12 (bookworm)",
+    "kernel": "6.12.93+rpt-rpi-2712",
+    "machine": "aarch64",
+    "cpu": "Raspberry Pi 5 Model B Rev 1.0",
+    "cpu_flags": [
+      "asimd",
+      "asimddp",
+      "asimdhp",
+      "fphp"
+    ],
+    "logical_cores": 4,
+    "physical_cores": 4,
+    "ram_bytes": 2108489728,
+    "swap_bytes": 0,
+    "dram_peak_GBs": 13.98,
+    "board_model": "Raspberry Pi 5 Model B Rev 1.0",
+    "python": "3.11.2",
+    "compiler": "cc (Debian 12.2.0-14) 12.2.0",
+    "libc": "glibc 2.36",
+    "capabilities": {
+      "temperature": true,
+      "throttle_flags": true,
+      "cpu_freq": true,
+      "pmic": true,
+      "rapl": false,
+      "cpu_utilisation": true,
+      "peak_rss": true,
+      "dvfs_read": true,
+      "dvfs_write": true
+    }
+  },
+  "backend": {
+    "name": "onnxruntime",
+    "version": "1.24.4",
+    "execution_provider": "CPUExecutionProvider",
+    "library_versions": {}
+  },
+  "workload": {
+    "model": "mnv3s-int8",
+    "model_path": "/home/manu/Desktop/researchpaper3/exports/CIFAR100_mobilenet_v3_small_CIFAR100_mobilenet_v3_small_20251015_155545/model_int8.onnx",
+    "quantization": "int8",
+    "batch_size": 1,
+    "input_shape": [
+      1,
+      3,
+      32,
+      32
+    ]
+  },
+  "knobs": {
+    "threads": 4,
+    "repetitions": 100,
+    "warmup": 15,
+    "extra": {}
+  },
+  "metrics": {
+    "load_ms": 191.4003299898468,
+    "latency_ms_mean": 0.5242479583830573,
+    "latency_ms_p50": 0.5204644985496998,
+    "latency_ms_p95": 0.5471140597364865,
+    "latency_ms_p99": 0.5531620446708985,
+    "throughput_ips": 1902.4294533562434,
+    "stdev_pct": 2.023729250647296,
+    "extra": {
+      "latency_ms_min": 0.5069269973319024,
+      "latency_ms_max": 0.5597980052698404,
+      "reps": 100,
+      "warmup": 15
+    }
+  },
+  "telemetry": {
+    "temp_c_start": 50.15,
+    "temp_c_mean": 50.644999999999996,
+    "temp_c_max": 51.8,
+    "throttled": false,
+    "throttle_flags": "0x0",
+    "cpu_util_pct_mean": 18.722466960352424,
+    "cpu_util_pct_per_core": [
+      14.2,
+      13.4,
+      14.2,
+      31.9
+    ],
+    "freq_khz_mean": 2400000.0,
+    "freq_khz_min": 2400000,
+    "freq_khz_max": 2400000,
+    "sample_hz": 10.0,
+    "sample_count": 10
+  },
+  "raw": {
+    "stdout": "===MLSYSLAB-ONNX-BEGIN===\n{\"status\": \"ok\", \"onnxruntime_version\": \"1.24.4\", \"providers_used\": [\"CPUExecutionProvider\"], \"providers_unavailable\": [], \"model\": \"/home/manu/Desktop/researchpaper3/exports/CIFAR100_mobilenet_v3_small_CIFAR100_mobilenet_v3_small_20251015_155545/model_int8.onnx\", \"inputs\": [{\"name\": \"input\", \"shape\": [1, 3, 32, 32], \"type\": \"tensor(float)\"}], \"threads\": 4, \"reps\": 100, \"warmup\": 15, \"load_ms\": 191.4003299898468, \"latency_ms_mean\": 0.5242479583830573, \"latency_ms_p50\": 0.5204644985496998, \"latency_ms_p95\": 0.5471140597364865, \"latency_ms_p99\": 0.5531620446708985, \"latency_ms_min\": 0.5069269973319024, \"latency_ms_max\": 0.5597980052698404, \"latency_ms_stdev\": 0.010609359279719194, \"throughput_ips\": 1902.4294533562434, \"wall_s\": 0.05256436701165512}\n===MLSYSLAB-ONNX-END===\n",
+    "stderr": "\u001b[0;93m2026-08-10 00:23:52.246584214 [W:onnxruntime:Default, device_discovery.cc:325 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:92 ReadFileContents Failed to open file: \"/sys/class/drm/card1/device/vendor\"\u001b[m\n",
+    "memory_before": {
+      "MemFree": 1538605056,
+      "MemAvailable": 1547255808,
+      "SwapTotal": 0,
+      "SwapFree": 0,
+      "SwapUsed": 0
+    },
+    "memory_after": {
+      "MemFree": 1449066496,
+      "MemAvailable": 1505984512,
+      "SwapTotal": 0,
+      "SwapFree": 0,
+      "SwapUsed": 0
+    }
+  }
+}

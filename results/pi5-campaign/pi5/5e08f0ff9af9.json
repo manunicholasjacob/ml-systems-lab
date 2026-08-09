@@ -1,0 +1,117 @@
+{
+  "run_id": "5e08f0ff9af9",
+  "experiment": "pi-overnight",
+  "schema_version": "1.0",
+  "lab_version": "0.1.0",
+  "timestamp_utc": "2026-08-09T23:31:55Z",
+  "duration_s": 81.97856592098833,
+  "status": "ok",
+  "warnings": [],
+  "tags": [],
+  "device": {
+    "device_id": "pi5",
+    "kind": "ssh",
+    "os": "Linux",
+    "os_release": "6.12.93+rpt-rpi-2712",
+    "distro": "Debian GNU/Linux 12 (bookworm)",
+    "kernel": "6.12.93+rpt-rpi-2712",
+    "machine": "aarch64",
+    "cpu": "Raspberry Pi 5 Model B Rev 1.0",
+    "cpu_flags": [
+      "asimd",
+      "asimddp",
+      "asimdhp",
+      "fphp"
+    ],
+    "logical_cores": 4,
+    "physical_cores": 4,
+    "ram_bytes": 2108489728,
+    "swap_bytes": 0,
+    "dram_peak_GBs": 13.98,
+    "board_model": "Raspberry Pi 5 Model B Rev 1.0",
+    "python": "3.11.2",
+    "compiler": "cc (Debian 12.2.0-14) 12.2.0",
+    "libc": "glibc 2.36",
+    "capabilities": {
+      "temperature": true,
+      "throttle_flags": true,
+      "cpu_freq": true,
+      "pmic": true,
+      "rapl": false,
+      "cpu_utilisation": true,
+      "peak_rss": true,
+      "dvfs_read": true,
+      "dvfs_write": true
+    }
+  },
+  "backend": {
+    "name": "llamacpp",
+    "version": "1",
+    "build": "d73c1d6",
+    "execution_provider": "CPU",
+    "library_versions": {}
+  },
+  "workload": {
+    "model": "llama1b-q4km",
+    "model_path": "/home/manu/llm/models/llama1b-q4km.gguf",
+    "weight_bytes": 799862912,
+    "params": 1.235814432,
+    "quantization": "Q4_K_M",
+    "architecture": "llama 1B Q4_K - Medium",
+    "prompt_tokens": 128,
+    "output_tokens": 256
+  },
+  "knobs": {
+    "threads": 4,
+    "repetitions": 3,
+    "extra": {}
+  },
+  "metrics": {
+    "prefill_tps": 75.535782,
+    "decode_tps": 12.252542,
+    "decode_bw_GBs": 9.800353923522305,
+    "bw_utilization_pct": 70.1026747033069,
+    "stdev_pct": 1.2983025713561818,
+    "extra": {}
+  },
+  "telemetry": {
+    "power_w_mean": 5.471841858384011,
+    "power_w_core": 3.712677187513883,
+    "power_w_dram": 0.24260728580128177,
+    "energy_j": 426.87857888826824,
+    "temp_c_start": 50.15,
+    "temp_c_mean": 58.17290322580634,
+    "temp_c_max": 60.6,
+    "throttled": false,
+    "throttle_flags": "0x0",
+    "cpu_util_pct_mean": 83.45312785527197,
+    "cpu_util_pct_per_core": [
+      85.5,
+      82.7,
+      82.8,
+      82.9
+    ],
+    "freq_khz_mean": 2400000.0,
+    "freq_khz_min": 2400000,
+    "freq_khz_max": 2400000,
+    "sample_hz": 10.0,
+    "sample_count": 775
+  },
+  "raw": {
+    "stdout": "[\n  {\n    \"build_commit\": \"d73c1d6\",\n    \"build_number\": 1,\n    \"cpu_info\": \"CPU\",\n    \"gpu_info\": \"\",\n    \"backends\": \"CPU\",\n    \"model_filename\": \"/home/manu/llm/models/llama1b-q4km.gguf\",\n    \"model_type\": \"llama 1B Q4_K - Medium\",\n    \"model_size\": 799862912,\n    \"model_n_params\": 1235814432,\n    \"n_batch\": 2048,\n    \"n_ubatch\": 512,\n    \"n_threads\": 4,\n    \"cpu_mask\": \"0x0\",\n    \"cpu_strict\": false,\n    \"poll\": 50,\n    \"type_k\": \"f16\",\n    \"type_v\": \"f16\",\n    \"n_gpu_layers\": -1,\n    \"n_cpu_moe\": 0,\n    \"split_mode\": \"layer\",\n    \"main_gpu\": 0,\n    \"no_kv_offload\": false,\n    \"flash_attn\": -1,\n    \"devices\": \"auto\",\n    \"tensor_split\": \"0.00\",\n    \"tensor_buft_overrides\": \"none\",\n    \"load_mode\": \"mmap\",\n    \"embeddings\": false,\n    \"no_op_offload\": 0,\n    \"no_host\": false,\n    \"fit_target\": 0,\n    \"fit_min_ctx\": 0,\n    \"n_prompt\": 128,\n    \"n_gen\": 0,\n    \"n_depth\": 0,\n    \"test_time\": \"2026-08-09T23:30:45Z\",\n    \"avg_ns\": 1694750175,\n    \"stddev_ns\": 21842912,\n    \"avg_ts\": 75.535782,\n    \"stddev_ts\": 0.980683,\n    \"samples_ns\": [ 1708872563, 1705786719, 1669591245 ],\n    \"samples_ts\": [ 74.9032, 75.0387, 76.6655 ]\n  },\n  {\n    \"build_commit\": \"d73c1d6\",\n    \"build_number\": 1,\n    \"cpu_info\": \"CPU\",\n    \"gpu_info\": \"\",\n    \"backends\": \"CPU\",\n    \"model_filename\": \"/home/manu/llm/models/llama1b-q4km.gguf\",\n    \"model_type\": \"llama 1B Q4_K - Medium\",\n    \"model_size\": 799862912,\n    \"model_n_params\": 1235814432,\n    \"n_batch\": 2048,\n    \"n_ubatch\": 512,\n    \"n_threads\": 4,\n    \"cpu_mask\": \"0x0\",\n    \"cpu_strict\": false,\n    \"poll\": 50,\n    \"type_k\": \"f16\",\n    \"type_v\": \"f16\",\n    \"n_gpu_layers\": -1,\n    \"n_cpu_moe\": 0,\n    \"split_mode\": \"layer\",\n    \"main_gpu\": 0,\n    \"no_kv_offload\": false,\n    \"flash_attn\": -1,\n    \"devices\": \"auto\",\n    \"tensor_split\": \"0.00\",\n    \"tensor_buft_overrides\": \"none\",\n    \"load_mode\": \"mmap\",\n    \"embeddings\": false,\n    \"no_op_offload\": 0,\n    \"no_host\": false,\n    \"fit_target\": 0,\n    \"fit_min_ctx\": 0,\n    \"n_prompt\": 0,\n    \"n_gen\": 256,\n    \"n_depth\": 0,\n    \"test_time\": \"2026-08-09T23:30:52Z\",\n    \"avg_ns\": 20894028285,\n    \"stddev_ns\": 112430637,\n    \"avg_ts\": 12.252542,\n    \"stddev_ts\": 0.066073,\n    \"samples_ns\": [ 20986585707, 20926587827, 20768911322 ],\n    \"samples_ts\": [ 12.1983, 12.2332, 12.3261 ]\n  }\n]\n",
+    "memory_before": {
+      "MemFree": 1537556480,
+      "MemAvailable": 1550843904,
+      "SwapTotal": 0,
+      "SwapFree": 0,
+      "SwapUsed": 0
+    },
+    "memory_after": {
+      "MemFree": 937492480,
+      "MemAvailable": 1545191424,
+      "SwapTotal": 0,
+      "SwapFree": 0,
+      "SwapUsed": 0
+    }
+  }
+}
