@@ -190,13 +190,25 @@ def thread_scaling_table(dataset: Dataset, fmt: str = "text") -> str:
 
 def quantization_table(dataset: Dataset, fmt: str = "text") -> str:
     """The size and speed frontier across quantisations of the same model family."""
-    usable = dataset.having("quant", "decode_tps", "weight_bytes")
+    usable = dataset.filter(mode="throughput").having("quant", "decode_tps",
+                                                      "weight_bytes")
     headers = ["device", "model", "quant", "MB", "decode t/s", "GB/s", "mJ/token"]
     rows = []
-    for (device, family), subset in usable.group_by("device", "family"):
-        if len(subset) < 2:
+    for (device,), subset in usable.group_by("device"):
+        if len(subset.unique("quant")) < 2:
             continue
-        for row in subset.sort("weight_bytes").rows:
+        # Best decode point per quantisation; thread variants are the thread table's job.
+        best: Dict[str, Dict[str, Any]] = {}
+        for row in subset.rows:
+            key = f"{row['quant']}|{row.get('weight_MB')}"
+            current = best.get(key)
+            if current is None or row["decode_tps"] > current["decode_tps"]:
+                # Prefer the variant that also measured energy when decode ties.
+                best[key] = row
+            elif (current and abs(row["decode_tps"] - current["decode_tps"]) < 0.5
+                  and row.get("energy_per_token_mj") and not current.get("energy_per_token_mj")):
+                best[key] = row
+        for row in sorted(best.values(), key=lambda r: r.get("weight_MB") or 0):
             rows.append([device, row["model"], row["quant"], row.get("weight_MB"),
                          row.get("decode_tps"), row.get("decode_bw_GBs"),
                          row.get("energy_per_token_mj")])
@@ -231,7 +243,9 @@ def energy_table(dataset: Dataset, fmt: str = "text") -> str:
     total power, the energy cost of inference is cores stalling on memory rather than the
     memory itself, which points optimisation somewhere different.
     """
-    usable = dataset.having("power_w")
+    # Throughput runs only: a latency run's mean power spans prefill and idle stretches,
+    # so an energy-per-token derived from it would mix two different quantities.
+    usable = dataset.filter(mode="throughput").having("power_w")
     headers = ["device", "model", "quant", "thr", "W total", "W core", "W DRAM",
                "DRAM %", "mJ/token", "C"]
     rows = []

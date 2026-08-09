@@ -74,7 +74,10 @@ def flatten(record: RunRecord) -> Dict[str, Any]:
     # Derived columns that are worth computing once rather than in every caller.
     if row["weight_bytes"]:
         row["weight_MB"] = row["weight_bytes"] / 1e6
-    if row["decode_tps"] and row["power_w"]:
+    if row["decode_tps"] and row["power_w"] and row["mode"] == "throughput":
+        # Throughput runs only: in a latency run the power average spans prefill and
+        # idle stretches, and dividing it by the decode rate inflates energy per token
+        # severalfold (a 1024-token prefill at 7 W is most of the window).
         row["energy_per_token_mj"] = row["energy_per_token_mj"] or (
             1000.0 * row["power_w"] / row["decode_tps"]
         )
