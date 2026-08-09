@@ -1,0 +1,109 @@
+# The laptop half of the matrix. RUN THIS WITH THE MACHINE IDLE: the same hardware
+# measured 50.7 GB/s idle and 14.1 GB/s under background load, and no repetition count
+# rescues a benchmark from constant contention. Launch it and walk away:
+#
+#   mlsys run configs/laptop-overnight.yaml
+#
+# Coverage mirrors pi-overnight.yaml and extends it with the models the Pi cannot hold
+# (3B, 7B) and the deeper thread sweep a 14-core part deserves. No PMIC on this machine
+# and RAPL is not exposed on Windows, so there are no power blocks; power on this
+# platform would be a number invented, not measured.
+experiment: laptop-overnight
+output_dir: runs/laptop-overnight
+
+devices:
+  laptop:
+    kind: local
+    python: C:/llmpc/venv311/Scripts/python.exe   # 3.11 venv: onnxruntime lives here
+    dram_peak_GBs: 53.9                           # best measured read kernel (dot, BLAS)
+    llamacpp:
+      bin_dir: C:/llmpc/bin
+
+models:
+  qwen0.5b-q2k:  { quantization: Q2_K,   params: 0.5,  paths: { laptop: C:/llmpc/models/qwen0.5b-q2k.gguf } }
+  qwen0.5b-q4km: { quantization: Q4_K_M, params: 0.5,  paths: { laptop: C:/llmpc/models/qwen0.5b-q4km.gguf } }
+  qwen0.5b-q8:   { quantization: Q8_0,   params: 0.5,  paths: { laptop: C:/llmpc/models/qwen0.5b-q8.gguf } }
+  llama1b-q4km:  { quantization: Q4_K_M, params: 1.24, paths: { laptop: C:/llmpc/models/llama1b-q4km.gguf } }
+  qwen1.5b-q4km: { quantization: Q4_K_M, params: 1.5,  paths: { laptop: C:/llmpc/models/qwen1.5b-q4km.gguf } }
+  qwen3b-q4km:   { quantization: Q4_K_M, params: 3.09, paths: { laptop: C:/llmpc/models/qwen3b-q4km.gguf } }
+  qwen7b-q4km:   { quantization: Q4_K_M, params: 7.62, paths: { laptop: C:/llmpc/models/qwen7b-q4km.gguf } }
+  mnv3s-fp32:    { quantization: fp32, paths: { laptop: C:/llmpc/onnx/cifar100_mobilenetv3s_fp32.onnx } }
+  mnv3s-int8:    { quantization: int8, paths: { laptop: C:/llmpc/onnx/cifar100_mobilenetv3s_int8.onnx } }
+  resnet18-fp32: { quantization: fp32, paths: { laptop: C:/llmpc/onnx/cifar100_resnet18_fp32.onnx } }
+  resnet18-int8: { quantization: int8, paths: { laptop: C:/llmpc/onnx/cifar100_resnet18_int8.onnx } }
+
+defaults:
+  backend: llamacpp
+  repetitions: 3
+
+matrix:
+  # 1. Size sweep x threads: 0.5B to 7B, bracketing the decode knee (8) and full P+E (20).
+  - devices: [laptop]
+    models: [qwen0.5b-q4km, llama1b-q4km, qwen1.5b-q4km, qwen3b-q4km, qwen7b-q4km]
+    modes: [throughput]
+    threads: [1, 4, 8, 14, 20]
+    prompt_tokens: [128]
+    output_tokens: [128]
+
+  # 2. Quantisation sweep at the knee.
+  - devices: [laptop]
+    models: [qwen0.5b-q2k, qwen0.5b-q8]
+    modes: [throughput]
+    threads: [8]
+    prompt_tokens: [128]
+    output_tokens: [128]
+
+  # 3. Prompt-length sweep.
+  - devices: [laptop]
+    models: [qwen0.5b-q4km]
+    modes: [throughput]
+    threads: [8]
+    prompt_tokens: [64, 512, 2048, 4096]
+    output_tokens: [64]
+
+  # 4. Output-length sweep.
+  - devices: [laptop]
+    models: [qwen0.5b-q4km]
+    modes: [throughput]
+    threads: [8]
+    prompt_tokens: [128]
+    output_tokens: [32, 256, 1024]
+
+  # 5. Context-depth sweep, deeper than the Pi can go.
+  - devices: [laptop]
+    models: [qwen0.5b-q4km, qwen1.5b-q4km]
+    modes: [throughput]
+    threads: [8]
+    prompt_tokens: [128]
+    output_tokens: [64]
+    context_tokens: [512, 2048, 8192]
+
+  # 6. TTFT / end-to-end latency, three model sizes, four prompt depths.
+  - devices: [laptop]
+    models: [qwen0.5b-q4km, qwen1.5b-q4km, qwen3b-q4km]
+    modes: [latency]
+    threads: [8]
+    prompt_tokens: [64, 256, 1024, 4096]
+    output_tokens: [64]
+    repetitions: 3
+    extra: { startup_timeout_s: 600 }
+
+  # 7. ONNX Runtime: vision latency and thread scaling.
+  - devices: [laptop]
+    backend: onnxruntime
+    models: [mnv3s-fp32, mnv3s-int8, resnet18-fp32, resnet18-int8]
+    modes: [throughput]
+    threads: [1, 4, 8]
+    batch_sizes: [1]
+    repetitions: 200
+    warmup: 20
+
+  # 8. ONNX batch scaling, which the Pi cannot afford.
+  - devices: [laptop]
+    backend: onnxruntime
+    models: [resnet18-int8]
+    modes: [throughput]
+    threads: [8]
+    batch_sizes: [4, 16, 64]
+    repetitions: 100
+    warmup: 10

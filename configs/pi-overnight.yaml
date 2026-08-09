@@ -1,0 +1,125 @@
+# The full Pi 5 matrix. Spec coverage: 3 model sizes, 5 quantisations, thread sweep,
+# prompt/output length sweeps, context-depth sweep, TTFT latency mode, ONNX Runtime as
+# the second backend, and power measured in separate runs per the two-run rule.
+#
+# Blocks are ordered smallest-model-first so an early failure costs the least, and every
+# llama.cpp point resets swap and drops caches: on a 2 GB board, resident pages from the
+# previous model turn the next run into an SD-card streaming benchmark.
+experiment: pi-overnight
+output_dir: runs/pi-overnight
+
+devices:
+  pi5:
+    host: 100.98.217.64
+    user: manu
+    identity_file: ~/.ssh/raspberry_pi_key
+    python: python3
+    dram_peak_GBs: 13.98
+    llamacpp:
+      bin_dir: ~/llm/llama.cpp/build/bin
+
+models:
+  qwen0.5b-q2k:  { quantization: Q2_K,   params: 0.5,  paths: { pi5: ~/llm/models/qwen0.5b-q2k.gguf } }
+  qwen0.5b-q3km: { quantization: Q3_K_M, params: 0.5,  paths: { pi5: ~/llm/models/qwen0.5b-q3km.gguf } }
+  qwen0.5b-q4km: { quantization: Q4_K_M, params: 0.5,  paths: { pi5: ~/llm/models/qwen0.5b-q4km.gguf } }
+  qwen0.5b-q5km: { quantization: Q5_K_M, params: 0.5,  paths: { pi5: ~/llm/models/qwen0.5b-q5km.gguf } }
+  qwen0.5b-q8:   { quantization: Q8_0,   params: 0.5,  paths: { pi5: ~/llm/models/qwen0.5b-q8.gguf } }
+  llama1b-q4km:  { quantization: Q4_K_M, params: 1.24, paths: { pi5: ~/llm/models/llama1b-q4km.gguf } }
+  qwen1.5b-q4km: { quantization: Q4_K_M, params: 1.5,  paths: { pi5: ~/llm/models/qwen1.5b-q4km.gguf } }
+  mnv3s-fp32:    { quantization: fp32, paths: { pi5: ~/Desktop/researchpaper3/exports/CIFAR100_mobilenet_v3_small_CIFAR100_mobilenet_v3_small_20251015_155545/model_fp32.onnx } }
+  mnv3s-int8:    { quantization: int8, paths: { pi5: ~/Desktop/researchpaper3/exports/CIFAR100_mobilenet_v3_small_CIFAR100_mobilenet_v3_small_20251015_155545/model_int8.onnx } }
+  resnet18-fp32: { quantization: fp32, paths: { pi5: ~/Desktop/researchpaper3/exports/CIFAR100_resnet18_CIFAR100_resnet18_20251015_162556/model_fp32.onnx } }
+  resnet18-int8: { quantization: int8, paths: { pi5: ~/Desktop/researchpaper3/exports/CIFAR100_resnet18_CIFAR100_resnet18_20251015_162556/model_int8.onnx } }
+
+defaults:
+  backend: llamacpp
+  repetitions: 3
+  prepare: { reset_swap: true, drop_caches: true, settle_s: 10 }
+
+matrix:
+  # 1. Size x thread sweep: the roofline and the decode saturation knee.
+  - devices: [pi5]
+    models: [qwen0.5b-q4km, llama1b-q4km, qwen1.5b-q4km]
+    modes: [throughput]
+    threads: [1, 2, 4]
+    prompt_tokens: [128]
+    output_tokens: [128]
+
+  # 2. Quantisation sweep at the saturated thread count.
+  - devices: [pi5]
+    models: [qwen0.5b-q2k, qwen0.5b-q3km, qwen0.5b-q5km, qwen0.5b-q8]
+    modes: [throughput]
+    threads: [4]
+    prompt_tokens: [128]
+    output_tokens: [128]
+
+  # 3. Prompt-length sweep (output fixed): prefill cost in isolation.
+  - devices: [pi5]
+    models: [qwen0.5b-q4km]
+    modes: [throughput]
+    threads: [4]
+    prompt_tokens: [64, 512, 2048]
+    output_tokens: [64]
+
+  # 4. Output-length sweep (prompt fixed): decode steady-state at several lengths.
+  - devices: [pi5]
+    models: [qwen0.5b-q4km]
+    modes: [throughput]
+    threads: [4]
+    prompt_tokens: [128]
+    output_tokens: [32, 256]
+
+  # 5. Context-depth sweep: decode with a deep KV cache (llama-bench -d).
+  - devices: [pi5]
+    models: [qwen0.5b-q4km]
+    modes: [throughput]
+    threads: [4]
+    prompt_tokens: [128]
+    output_tokens: [64]
+    context_tokens: [512, 2048]
+
+  # 6. Power runs: same operating points as the t=4 sweep, sampler on. Kept separate
+  #    from the throughput blocks because the PMIC sampler perturbs decode; tokens/s
+  #    comes from blocks 1-2, watts from here.
+  - devices: [pi5]
+    models: [qwen0.5b-q2k, qwen0.5b-q3km, qwen0.5b-q4km, qwen0.5b-q5km, qwen0.5b-q8,
+             llama1b-q4km, qwen1.5b-q4km]
+    modes: [throughput]
+    threads: [4]
+    prompt_tokens: [128]
+    output_tokens: [256]
+    sample_power: true
+    extra: { skip_leading_s: 4 }   # skip model load + prefill in the power window
+
+  # 7. TTFT / end-to-end latency via llama-server streaming.
+  - devices: [pi5]
+    models: [qwen0.5b-q4km, llama1b-q4km]
+    modes: [latency]
+    threads: [4]
+    prompt_tokens: [64, 256, 1024]
+    output_tokens: [64]
+    repetitions: 3
+    sample_power: true
+    extra: { startup_timeout_s: 420 }
+
+  # 8. ONNX Runtime, second backend: vision latency, thread scaling.
+  - devices: [pi5]
+    backend: onnxruntime
+    models: [mnv3s-fp32, mnv3s-int8, resnet18-fp32, resnet18-int8]
+    modes: [throughput]
+    threads: [1, 4]
+    batch_sizes: [1]
+    repetitions: 100
+    warmup: 15
+
+  # 9. ONNX power runs, sampler on, same two-run rule.
+  - devices: [pi5]
+    backend: onnxruntime
+    models: [mnv3s-int8, resnet18-int8]
+    modes: [throughput]
+    threads: [4]
+    batch_sizes: [1]
+    repetitions: 300
+    warmup: 15
+    sample_power: true
+    extra: { skip_leading_s: 2 }

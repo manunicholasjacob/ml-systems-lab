@@ -1,0 +1,56 @@
+{
+  "run_id": "ff5115320c61",
+  "experiment": "paper12-edge-llm-memwall",
+  "schema_version": "1.0",
+  "lab_version": "0.1.0",
+  "timestamp_utc": "2026-07-27T00:00:00Z",
+  "status": "ok",
+  "warnings": [],
+  "tags": [
+    "backfill",
+    "paper12"
+  ],
+  "device": {
+    "device_id": "pi5-2gb",
+    "kind": "ssh",
+    "os": "Linux",
+    "machine": "aarch64",
+    "cpu": "Raspberry Pi 5 Model B Rev 1.0 (Cortex-A76)",
+    "logical_cores": 4,
+    "physical_cores": 4,
+    "ram_bytes": 2108489728,
+    "dram_peak_GBs": 13.98,
+    "board_model": "Raspberry Pi 5 Model B Rev 1.0",
+    "capabilities": {}
+  },
+  "backend": {
+    "name": "llamacpp",
+    "execution_provider": "CPU",
+    "library_versions": {}
+  },
+  "workload": {
+    "model": "llama1b-q4km",
+    "weight_bytes": 807694464,
+    "quantization": "Q4_K_M"
+  },
+  "knobs": {
+    "threads": 4,
+    "extra": {}
+  },
+  "metrics": {
+    "decode_tps": 11.27778,
+    "decode_bw_GBs": 9.109000472209921,
+    "bw_utilization_pct": 65.15737104585065,
+    "extra": {}
+  },
+  "telemetry": {
+    "power_w_mean": 5.109957420854635,
+    "power_w_core": 3.426761719989088,
+    "power_w_dram": 0.20442974370744743,
+    "idle_power_w": 2.0458558085143483,
+    "energy_per_token_mj": 453.09958350443395
+  },
+  "raw": {
+    "source": "L3_energy.json"
+  }
+}

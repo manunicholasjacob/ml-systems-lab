@@ -1,0 +1,58 @@
+# Wiring check for the ONNX Runtime backend, mirroring configs/smoke.yaml for llama.cpp.
+# Two architectures at two precisions is enough to catch a wrong interpreter, a missing
+# provider or a model whose symbolic input shape did not resolve.
+experiment: cnn-smoke
+output_dir: runs/cnn-smoke
+
+devices:
+  laptop:
+    kind: local
+    # The default interpreter on this machine is 3.14 and has no ONNX Runtime, so the
+    # device points at a 3.11 environment that does. This is exactly the per-device
+    # difference the abstraction exists to hide from the backend.
+    python: C:/llmpc/venv311/Scripts/python.exe
+    dram_peak_GBs: 53.9
+
+  pi5:
+    host: 100.98.217.64
+    user: manu
+    identity_file: ~/.ssh/raspberry_pi_key
+    python: python3
+    dram_peak_GBs: 13.98
+
+models:
+  mobilenetv3s-fp32:
+    quantization: fp32
+    paths:
+      laptop: C:/llmpc/onnx/cifar100_mobilenetv3s_fp32.onnx
+      pi5: ~/Desktop/researchpaper3/exports/CIFAR100_mobilenet_v3_small_CIFAR100_mobilenet_v3_small_20251015_155545/model_fp32.onnx
+
+  mobilenetv3s-int8:
+    quantization: int8
+    paths:
+      laptop: C:/llmpc/onnx/cifar100_mobilenetv3s_int8.onnx
+      pi5: ~/Desktop/researchpaper3/exports/CIFAR100_mobilenet_v3_small_CIFAR100_mobilenet_v3_small_20251015_155545/model_int8.onnx
+
+  resnet18-fp32:
+    quantization: fp32
+    paths:
+      laptop: C:/llmpc/onnx/cifar100_resnet18_fp32.onnx
+      pi5: ~/Desktop/researchpaper3/exports/CIFAR100_resnet18_CIFAR100_resnet18_20251015_162556/model_fp32.onnx
+
+  resnet18-int8:
+    quantization: int8
+    paths:
+      laptop: C:/llmpc/onnx/cifar100_resnet18_int8.onnx
+      pi5: ~/Desktop/researchpaper3/exports/CIFAR100_resnet18_CIFAR100_resnet18_20251015_162556/model_int8.onnx
+
+defaults:
+  backend: onnxruntime
+  repetitions: 50
+  warmup: 10
+
+matrix:
+  - devices: [laptop]
+    models: [mobilenetv3s-fp32, mobilenetv3s-int8, resnet18-fp32, resnet18-int8]
+    modes: [throughput]
+    threads: [4]
+    batch_sizes: [1]

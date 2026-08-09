@@ -1,0 +1,27 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.venv/
+.ci-venv/
+venv/
+env/
+.env
+
+# Experiment output. Runs are large and machine-specific; curated results live in
+# results/ and are committed deliberately, never by accident.
+runs/
+scratch/
+*.log
+
+# Models are never committed.
+*.gguf
+*.onnx
+*.pt
+*.bin
+
+.DS_Store
+Thumbs.db

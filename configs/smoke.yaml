@@ -1,0 +1,62 @@
+# A deliberately tiny matrix, used to check that a machine is wired up correctly before
+# committing it to an overnight campaign. Two thread counts on the smallest model is
+# enough to catch a wrong path, a missing binary or a dead SSH key, and it finishes in
+# about a minute on the laptop.
+experiment: smoke
+output_dir: runs/smoke
+
+devices:
+  laptop:
+    kind: local
+    # Best read-only kernel measured on this machine, used as the roofline denominator.
+    # Declared rather than probed: a wrong ceiling silently turns into a wrong percentage.
+    dram_peak_GBs: 53.9
+    llamacpp:
+      bin_dir: C:/llmpc/bin
+
+  pi5:
+    host: 100.98.217.64
+    user: manu
+    identity_file: ~/.ssh/raspberry_pi_key
+    python: python3
+    dram_peak_GBs: 13.98
+    llamacpp:
+      bin_dir: ~/llm/llama.cpp/build/bin
+
+models:
+  qwen0.5b-q2k:
+    quantization: Q2_K
+    params: 0.5
+    paths:
+      laptop: C:/llmpc/models/qwen0.5b-q2k.gguf
+      pi5: ~/llm/models/qwen0.5b-q2k.gguf
+
+  qwen0.5b-q4km:
+    quantization: Q4_K_M
+    params: 0.5
+    paths:
+      laptop: C:/llmpc/models/qwen0.5b-q4km.gguf
+      pi5: ~/llm/models/qwen0.5b-q4km.gguf
+
+defaults:
+  backend: llamacpp
+  repetitions: 1
+
+matrix:
+  - devices: [laptop]
+    models: [qwen0.5b-q2k, qwen0.5b-q4km]
+    modes: [throughput]
+    threads: [4, 8]
+    prompt_tokens: [128]
+    output_tokens: [64]
+
+  # Latency mode drives llama-server instead of llama-bench, because time to first token
+  # cannot be recovered from a throughput benchmark. Two prompt lengths, since TTFT is
+  # dominated by prefill and therefore scales with the prompt while decode does not.
+  - devices: [laptop]
+    models: [qwen0.5b-q4km]
+    modes: [latency]
+    threads: [8]
+    prompt_tokens: [128, 512]
+    output_tokens: [64]
+    repetitions: 3

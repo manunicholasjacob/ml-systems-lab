@@ -1,0 +1,51 @@
+{
+  "run_id": "f067d8ad663e",
+  "experiment": "paper12-edge-llm-memwall",
+  "schema_version": "1.0",
+  "lab_version": "0.1.0",
+  "timestamp_utc": "2026-07-27T00:00:00Z",
+  "status": "ok",
+  "warnings": [],
+  "tags": [
+    "backfill",
+    "paper12"
+  ],
+  "device": {
+    "device_id": "laptop-i7-12700h",
+    "kind": "local",
+    "os": "Windows",
+    "machine": "AMD64",
+    "cpu": "12th Gen Intel(R) Core(TM) i7-12700H",
+    "logical_cores": 20,
+    "physical_cores": 14,
+    "ram_bytes": 34014814208,
+    "dram_peak_GBs": 42.1,
+    "capabilities": {}
+  },
+  "backend": {
+    "name": "llamacpp",
+    "execution_provider": "CPU",
+    "library_versions": {}
+  },
+  "workload": {
+    "model": "qwen3b-q4km",
+    "weight_bytes": 1929903264,
+    "params": 3.0,
+    "quantization": "Q4_K_M"
+  },
+  "knobs": {
+    "threads": 14,
+    "extra": {}
+  },
+  "metrics": {
+    "prefill_tps": 84.534033,
+    "decode_tps": 20.350671,
+    "decode_bw_GBs": 39.274826387490144,
+    "bw_utilization_pct": 93.28937384201934,
+    "extra": {}
+  },
+  "telemetry": {},
+  "raw": {
+    "source": "pc_roofline.json"
+  }
+}
