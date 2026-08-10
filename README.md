@@ -1,5 +1,9 @@
 # ML Systems Lab
 
+[![tests](https://github.com/manunicholasjacob/ml-systems-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/manunicholasjacob/ml-systems-lab/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](pyproject.toml)
+
 A reproducible benchmarking framework for ML inference across heterogeneous hardware:
 laptops, single-board computers, and servers, from one config file and one command.
 
@@ -17,9 +21,15 @@ publication-quality tables (text, Markdown, LaTeX/booktabs) and figures.
 Built and used for a real research program: the records under `results/paper12/` are the
 measurements behind an IEEE Transactions on Computers submission, and the framework
 reproduces that paper's published roofline fits exactly (Pi 5: 10.7 GB/s effective,
-R^2 = 0.980; i7-12700H: 35.7 GB/s, R^2 = 0.980).
+R^2 = 0.980; i7-12700H: 35.7 GB/s, R^2 = 0.980). Two campaigns run natively by this
+framework then re-measured the same quantities independently and agreed within 1.6%.
 
-![roofline](results/paper12/report/fig_roofline.png)
+![roofline](results/combined-report/fig_roofline.png)
+
+*Every point is a different model or quantization; every line is one device's effective
+memory bandwidth. Two independent Pi 5 campaigns (weeks apart, different harnesses) and
+two laptop campaigns land on top of each other: decode throughput is model bytes divided
+by one number per device.*
 
 ## What it measures
 

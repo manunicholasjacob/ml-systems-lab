@@ -115,6 +115,7 @@ class FigureSet:
             return None
 
         figure, axis = plt.subplots(figsize=(4.2, 3.2))
+        fit_labels: List[Tuple[str, str, float]] = []
         for (device,), subset in usable.group_by("device"):
             # Best thread count per model: the roofline is about the ceiling, and
             # sub-saturated points would smear a thread effect into a size effect.
@@ -139,9 +140,16 @@ class FigureSet:
                 label = f"{device}: {fit['slope'] / 1e9:.1f} GB/s"
                 if not math.isnan(fit["r2"]):
                     label += f", $R^2$={fit['r2']:.3f}"
-                axis.annotate(label, xy=(span[0], line[0]),
-                              xytext=(4, 4), textcoords="offset points",
-                              fontsize=8, color=color)
+                fit_labels.append((label, color, fit["slope"]))
+
+        # Fit labels go in a fixed column in the bottom-left, which a descending
+        # log-log scatter leaves empty, rather than beside each line: near-coincident
+        # fits (the point of a reproduction) would print on top of each other, and
+        # the top-left is where the fastest device's points live.
+        ordered = sorted(fit_labels, key=lambda t: -t[2])
+        for index, (label, color, _slope) in enumerate(ordered):
+            axis.text(0.02, 0.04 + 0.075 * (len(ordered) - 1 - index), label,
+                      transform=axis.transAxes, fontsize=8, color=color, va="bottom")
 
         axis.set_xscale("log")
         axis.set_yscale("log")
