@@ -31,3 +31,29 @@ Provenance note: five points in the original power block ran while another workl
 was on the machine. The per-record `stdev_pct` integrity flag identified all five
 (spread 30 to 103% against a campaign norm under 2.5%); they were deleted and
 re-measured on the idle machine. The records in this directory are the clean ones.
+
+## laptop-campaign/
+
+The laptop half of the same night (75 points, `configs/laptop-overnight.yaml`), run
+behind an automated idle gate after another workload finished:
+
+- size sweep 0.5B to 7B at five thread counts; the 7B reaches 90% of the measured
+  bandwidth ceiling, and 20 threads (E-cores engaged) costs the 0.5B 37% of decode
+- the canonical FP16-sourced 8-format quantization ladder: Q4_0 is the throughput
+  winner (117.6 tok/s), Q6_K and Q8_0 saturate 98% of bandwidth, and the I-quants
+  keep pace with K-quants on x86
+- context-depth decay: 0.5B decode falls 77 to 32 tok/s from depth 512 to 8192
+- TTFT from 367 ms (0.5B, 64-token prompt) to 70.2 s (3B, 4096-token prompt)
+- ONNX batch scaling on CPU, and int8 slower than fp32 at every thread count, the
+  mirror image of the Pi result
+
+13 records carry a spread flag above 10%: ten are sub-millisecond ONNX inferences
+where Windows scheduler jitter is a large fraction of the measurement, three are
+20-thread runs where P/E-core scheduling variance is the phenomenon being measured.
+They are flagged in-record rather than excluded.
+
+## combined-report/
+
+Tables and figures over everything above at once. Two independent Pi campaigns agree
+on the effective bandwidth within 1.6%; the x86 to A76 decode ratio is 3.3 to 3.5x
+on every shared model; and the decode roofline holds on both architectures.

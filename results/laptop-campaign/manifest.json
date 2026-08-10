@@ -1,0 +1,502 @@
+{
+  "experiment": "laptop-overnight",
+  "source_config": "C:\\Users\\manun\\OneDrive\\Documents\\Claudecode\\ml-systems-lab\\configs\\laptop-overnight.yaml",
+  "created_utc": "2026-08-10T00:02:35Z",
+  "run_count": 75,
+  "devices": {
+    "laptop": {
+      "kind": "local",
+      "python": "C:/llmpc/venv311/Scripts/python.exe",
+      "dram_peak_GBs": 53.9,
+      "llamacpp": {
+        "bin_dir": "C:/llmpc/bin"
+      }
+    }
+  },
+  "models": {
+    "qwen0.5b-q2k": {
+      "quantization": "Q2_K",
+      "params": 0.5,
+      "paths": {
+        "laptop": "C:/llmpc/models/qwen0.5b-q2k.gguf"
+      }
+    },
+    "qwen0.5b-q4km": {
+      "quantization": "Q4_K_M",
+      "params": 0.5,
+      "paths": {
+        "laptop": "C:/llmpc/models/qwen0.5b-q4km.gguf"
+      }
+    },
+    "qwen0.5b-q8": {
+      "quantization": "Q8_0",
+      "params": 0.5,
+      "paths": {
+        "laptop": "C:/llmpc/models/qwen0.5b-q8.gguf"
+      }
+    },
+    "llama1b-q4km": {
+      "quantization": "Q4_K_M",
+      "params": 1.24,
+      "paths": {
+        "laptop": "C:/llmpc/models/llama1b-q4km.gguf"
+      }
+    },
+    "qwen1.5b-q4km": {
+      "quantization": "Q4_K_M",
+      "params": 1.5,
+      "paths": {
+        "laptop": "C:/llmpc/models/qwen1.5b-q4km.gguf"
+      }
+    },
+    "qwen3b-q4km": {
+      "quantization": "Q4_K_M",
+      "params": 3.09,
+      "paths": {
+        "laptop": "C:/llmpc/models/qwen3b-q4km.gguf"
+      }
+    },
+    "qwen7b-q4km": {
+      "quantization": "Q4_K_M",
+      "params": 7.62,
+      "paths": {
+        "laptop": "C:/llmpc/models/qwen7b-q4km.gguf"
+      }
+    },
+    "fp16src-q2k": {
+      "quantization": "Q2_K",
+      "params": 0.5,
+      "paths": {
+        "laptop": "C:/llmpc/fp16quant/qwen0.5b-Q2_K.fp16src.gguf"
+      }
+    },
+    "fp16src-q3km": {
+      "quantization": "Q3_K_M",
+      "params": 0.5,
+      "paths": {
+        "laptop": "C:/llmpc/fp16quant/qwen0.5b-Q3_K_M.fp16src.gguf"
+      }
+    },
+    "fp16src-q40": {
+      "quantization": "Q4_0",
+      "params": 0.5,
+      "paths": {
+        "laptop": "C:/llmpc/fp16quant/qwen0.5b-Q4_0.fp16src.gguf"
+      }
+    },
+    "fp16src-iq4xs": {
+      "quantization": "IQ4_XS",
+      "params": 0.5,
+      "paths": {
+        "laptop": "C:/llmpc/fp16quant/qwen0.5b-IQ4_XS.fp16src.gguf"
+      }
+    },
+    "fp16src-iq4nl": {
+      "quantization": "IQ4_NL",
+      "params": 0.5,
+      "paths": {
+        "laptop": "C:/llmpc/fp16quant/qwen0.5b-IQ4_NL.fp16src.gguf"
+      }
+    },
+    "fp16src-q4km": {
+      "quantization": "Q4_K_M",
+      "params": 0.5,
+      "paths": {
+        "laptop": "C:/llmpc/fp16quant/qwen0.5b-Q4_K_M.fp16src.gguf"
+      }
+    },
+    "fp16src-q6k": {
+      "quantization": "Q6_K",
+      "params": 0.5,
+      "paths": {
+        "laptop": "C:/llmpc/fp16quant/qwen0.5b-Q6_K.fp16src.gguf"
+      }
+    },
+    "fp16src-q80": {
+      "quantization": "Q8_0",
+      "params": 0.5,
+      "paths": {
+        "laptop": "C:/llmpc/fp16quant/qwen0.5b-Q8_0.fp16src.gguf"
+      }
+    },
+    "mnv3s-fp32": {
+      "quantization": "fp32",
+      "paths": {
+        "laptop": "C:/llmpc/onnx/cifar100_mobilenetv3s_fp32.onnx"
+      }
+    },
+    "mnv3s-int8": {
+      "quantization": "int8",
+      "paths": {
+        "laptop": "C:/llmpc/onnx/cifar100_mobilenetv3s_int8.onnx"
+      }
+    },
+    "resnet18-fp32": {
+      "quantization": "fp32",
+      "paths": {
+        "laptop": "C:/llmpc/onnx/cifar100_resnet18_fp32.onnx"
+      }
+    },
+    "resnet18-int8": {
+      "quantization": "int8",
+      "paths": {
+        "laptop": "C:/llmpc/onnx/cifar100_resnet18_int8.onnx"
+      }
+    }
+  },
+  "config": {
+    "experiment": "laptop-overnight",
+    "output_dir": "runs/laptop-overnight",
+    "devices": {
+      "laptop": {
+        "kind": "local",
+        "python": "C:/llmpc/venv311/Scripts/python.exe",
+        "dram_peak_GBs": 53.9,
+        "llamacpp": {
+          "bin_dir": "C:/llmpc/bin"
+        }
+      }
+    },
+    "models": {
+      "qwen0.5b-q2k": {
+        "quantization": "Q2_K",
+        "params": 0.5,
+        "paths": {
+          "laptop": "C:/llmpc/models/qwen0.5b-q2k.gguf"
+        }
+      },
+      "qwen0.5b-q4km": {
+        "quantization": "Q4_K_M",
+        "params": 0.5,
+        "paths": {
+          "laptop": "C:/llmpc/models/qwen0.5b-q4km.gguf"
+        }
+      },
+      "qwen0.5b-q8": {
+        "quantization": "Q8_0",
+        "params": 0.5,
+        "paths": {
+          "laptop": "C:/llmpc/models/qwen0.5b-q8.gguf"
+        }
+      },
+      "llama1b-q4km": {
+        "quantization": "Q4_K_M",
+        "params": 1.24,
+        "paths": {
+          "laptop": "C:/llmpc/models/llama1b-q4km.gguf"
+        }
+      },
+      "qwen1.5b-q4km": {
+        "quantization": "Q4_K_M",
+        "params": 1.5,
+        "paths": {
+          "laptop": "C:/llmpc/models/qwen1.5b-q4km.gguf"
+        }
+      },
+      "qwen3b-q4km": {
+        "quantization": "Q4_K_M",
+        "params": 3.09,
+        "paths": {
+          "laptop": "C:/llmpc/models/qwen3b-q4km.gguf"
+        }
+      },
+      "qwen7b-q4km": {
+        "quantization": "Q4_K_M",
+        "params": 7.62,
+        "paths": {
+          "laptop": "C:/llmpc/models/qwen7b-q4km.gguf"
+        }
+      },
+      "fp16src-q2k": {
+        "quantization": "Q2_K",
+        "params": 0.5,
+        "paths": {
+          "laptop": "C:/llmpc/fp16quant/qwen0.5b-Q2_K.fp16src.gguf"
+        }
+      },
+      "fp16src-q3km": {
+        "quantization": "Q3_K_M",
+        "params": 0.5,
+        "paths": {
+          "laptop": "C:/llmpc/fp16quant/qwen0.5b-Q3_K_M.fp16src.gguf"
+        }
+      },
+      "fp16src-q40": {
+        "quantization": "Q4_0",
+        "params": 0.5,
+        "paths": {
+          "laptop": "C:/llmpc/fp16quant/qwen0.5b-Q4_0.fp16src.gguf"
+        }
+      },
+      "fp16src-iq4xs": {
+        "quantization": "IQ4_XS",
+        "params": 0.5,
+        "paths": {
+          "laptop": "C:/llmpc/fp16quant/qwen0.5b-IQ4_XS.fp16src.gguf"
+        }
+      },
+      "fp16src-iq4nl": {
+        "quantization": "IQ4_NL",
+        "params": 0.5,
+        "paths": {
+          "laptop": "C:/llmpc/fp16quant/qwen0.5b-IQ4_NL.fp16src.gguf"
+        }
+      },
+      "fp16src-q4km": {
+        "quantization": "Q4_K_M",
+        "params": 0.5,
+        "paths": {
+          "laptop": "C:/llmpc/fp16quant/qwen0.5b-Q4_K_M.fp16src.gguf"
+        }
+      },
+      "fp16src-q6k": {
+        "quantization": "Q6_K",
+        "params": 0.5,
+        "paths": {
+          "laptop": "C:/llmpc/fp16quant/qwen0.5b-Q6_K.fp16src.gguf"
+        }
+      },
+      "fp16src-q80": {
+        "quantization": "Q8_0",
+        "params": 0.5,
+        "paths": {
+          "laptop": "C:/llmpc/fp16quant/qwen0.5b-Q8_0.fp16src.gguf"
+        }
+      },
+      "mnv3s-fp32": {
+        "quantization": "fp32",
+        "paths": {
+          "laptop": "C:/llmpc/onnx/cifar100_mobilenetv3s_fp32.onnx"
+        }
+      },
+      "mnv3s-int8": {
+        "quantization": "int8",
+        "paths": {
+          "laptop": "C:/llmpc/onnx/cifar100_mobilenetv3s_int8.onnx"
+        }
+      },
+      "resnet18-fp32": {
+        "quantization": "fp32",
+        "paths": {
+          "laptop": "C:/llmpc/onnx/cifar100_resnet18_fp32.onnx"
+        }
+      },
+      "resnet18-int8": {
+        "quantization": "int8",
+        "paths": {
+          "laptop": "C:/llmpc/onnx/cifar100_resnet18_int8.onnx"
+        }
+      }
+    },
+    "defaults": {
+      "backend": "llamacpp",
+      "repetitions": 3
+    },
+    "matrix": [
+      {
+        "devices": [
+          "laptop"
+        ],
+        "models": [
+          "qwen0.5b-q4km",
+          "llama1b-q4km",
+          "qwen1.5b-q4km",
+          "qwen3b-q4km",
+          "qwen7b-q4km"
+        ],
+        "modes": [
+          "throughput"
+        ],
+        "threads": [
+          1,
+          4,
+          8,
+          14,
+          20
+        ],
+        "prompt_tokens": [
+          128
+        ],
+        "output_tokens": [
+          128
+        ]
+      },
+      {
+        "devices": [
+          "laptop"
+        ],
+        "models": [
+          "qwen0.5b-q2k",
+          "qwen0.5b-q8",
+          "fp16src-q2k",
+          "fp16src-q3km",
+          "fp16src-q40",
+          "fp16src-iq4xs",
+          "fp16src-iq4nl",
+          "fp16src-q4km",
+          "fp16src-q6k",
+          "fp16src-q80"
+        ],
+        "modes": [
+          "throughput"
+        ],
+        "threads": [
+          8
+        ],
+        "prompt_tokens": [
+          128
+        ],
+        "output_tokens": [
+          128
+        ]
+      },
+      {
+        "devices": [
+          "laptop"
+        ],
+        "models": [
+          "qwen0.5b-q4km"
+        ],
+        "modes": [
+          "throughput"
+        ],
+        "threads": [
+          8
+        ],
+        "prompt_tokens": [
+          64,
+          512,
+          2048,
+          4096
+        ],
+        "output_tokens": [
+          64
+        ]
+      },
+      {
+        "devices": [
+          "laptop"
+        ],
+        "models": [
+          "qwen0.5b-q4km"
+        ],
+        "modes": [
+          "throughput"
+        ],
+        "threads": [
+          8
+        ],
+        "prompt_tokens": [
+          128
+        ],
+        "output_tokens": [
+          32,
+          256,
+          1024
+        ]
+      },
+      {
+        "devices": [
+          "laptop"
+        ],
+        "models": [
+          "qwen0.5b-q4km",
+          "qwen1.5b-q4km"
+        ],
+        "modes": [
+          "throughput"
+        ],
+        "threads": [
+          8
+        ],
+        "prompt_tokens": [
+          128
+        ],
+        "output_tokens": [
+          64
+        ],
+        "context_tokens": [
+          512,
+          2048,
+          8192
+        ]
+      },
+      {
+        "devices": [
+          "laptop"
+        ],
+        "models": [
+          "qwen0.5b-q4km",
+          "qwen1.5b-q4km",
+          "qwen3b-q4km"
+        ],
+        "modes": [
+          "latency"
+        ],
+        "threads": [
+          8
+        ],
+        "prompt_tokens": [
+          64,
+          256,
+          1024,
+          4096
+        ],
+        "output_tokens": [
+          64
+        ],
+        "repetitions": 3,
+        "extra": {
+          "startup_timeout_s": 600
+        }
+      },
+      {
+        "devices": [
+          "laptop"
+        ],
+        "backend": "onnxruntime",
+        "models": [
+          "mnv3s-fp32",
+          "mnv3s-int8",
+          "resnet18-fp32",
+          "resnet18-int8"
+        ],
+        "modes": [
+          "throughput"
+        ],
+        "threads": [
+          1,
+          4,
+          8
+        ],
+        "batch_sizes": [
+          1
+        ],
+        "repetitions": 200,
+        "warmup": 20
+      },
+      {
+        "devices": [
+          "laptop"
+        ],
+        "backend": "onnxruntime",
+        "models": [
+          "resnet18-int8"
+        ],
+        "modes": [
+          "throughput"
+        ],
+        "threads": [
+          8
+        ],
+        "batch_sizes": [
+          4,
+          16,
+          64
+        ],
+        "repetitions": 100,
+        "warmup": 10
+      }
+    ]
+  }
+}

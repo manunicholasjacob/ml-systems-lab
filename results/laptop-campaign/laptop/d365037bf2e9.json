@@ -1,0 +1,87 @@
+{
+  "run_id": "d365037bf2e9",
+  "experiment": "laptop-overnight",
+  "schema_version": "1.0",
+  "lab_version": "0.1.0",
+  "timestamp_utc": "2026-08-10T00:39:32Z",
+  "duration_s": 1.2818310000002384,
+  "status": "ok",
+  "warnings": [],
+  "tags": [],
+  "device": {
+    "device_id": "laptop",
+    "kind": "local",
+    "os": "Windows",
+    "os_release": "10",
+    "distro": "Windows-10-10.0.26200-SP0",
+    "kernel": "10",
+    "machine": "AMD64",
+    "cpu": "12th Gen Intel(R) Core(TM) i7-12700H",
+    "logical_cores": 20,
+    "physical_cores": 14,
+    "ram_bytes": 34014814208,
+    "dram_peak_GBs": 53.9,
+    "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU",
+    "python": "3.11.4",
+    "capabilities": {
+      "temperature": false,
+      "throttle_flags": false,
+      "cpu_freq": false,
+      "pmic": false,
+      "rapl": false,
+      "cpu_utilisation": true,
+      "peak_rss": false,
+      "dvfs_read": false,
+      "dvfs_write": false
+    }
+  },
+  "backend": {
+    "name": "onnxruntime",
+    "version": "1.28.0",
+    "execution_provider": "CPUExecutionProvider",
+    "library_versions": {}
+  },
+  "workload": {
+    "model": "resnet18-int8",
+    "model_path": "C:/llmpc/onnx/cifar100_resnet18_int8.onnx",
+    "model_bytes": 11346797,
+    "quantization": "int8",
+    "architecture": "resnet18",
+    "batch_size": 4,
+    "input_shape": [
+      4,
+      3,
+      32,
+      32
+    ]
+  },
+  "knobs": {
+    "threads": 8,
+    "repetitions": 100,
+    "warmup": 10,
+    "extra": {}
+  },
+  "metrics": {
+    "load_ms": 85.18380002351478,
+    "latency_ms_mean": 4.901473003556021,
+    "latency_ms_p50": 4.935000004479662,
+    "latency_ms_p95": 5.5437150003854185,
+    "latency_ms_p99": 5.706018995842898,
+    "throughput_ips": 815.7679792976016,
+    "stdev_pct": 7.403840862451528,
+    "extra": {
+      "latency_ms_min": 4.1871999856084585,
+      "latency_ms_max": 6.094000011216849,
+      "reps": 100,
+      "warmup": 10
+    }
+  },
+  "telemetry": {
+    "cpu_util_pct_mean": 44.66824644549763,
+    "sample_hz": 10.0,
+    "sample_count": 12
+  },
+  "raw": {
+    "stdout": "===MLSYSLAB-ONNX-BEGIN===\r\n{\"status\": \"ok\", \"onnxruntime_version\": \"1.28.0\", \"providers_used\": [\"CPUExecutionProvider\"], \"providers_unavailable\": [], \"model\": \"C:/llmpc/onnx/cifar100_resnet18_int8.onnx\", \"inputs\": [{\"name\": \"input\", \"shape\": [4, 3, 32, 32], \"type\": \"tensor(float)\"}], \"threads\": 8, \"reps\": 100, \"warmup\": 10, \"load_ms\": 85.18380002351478, \"latency_ms_mean\": 4.901473003556021, \"latency_ms_p50\": 4.935000004479662, \"latency_ms_p95\": 5.5437150003854185, \"latency_ms_p99\": 5.706018995842898, \"latency_ms_min\": 4.1871999856084585, \"latency_ms_max\": 6.094000011216849, \"latency_ms_stdev\": 0.36289726109931086, \"throughput_ips\": 815.7679792976016, \"wall_s\": 0.4903354999842122}\r\n===MLSYSLAB-ONNX-END===\r\n"
+  }
+}

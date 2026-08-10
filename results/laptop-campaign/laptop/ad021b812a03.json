@@ -1,0 +1,95 @@
+{
+  "run_id": "ad021b812a03",
+  "experiment": "laptop-overnight",
+  "schema_version": "1.0",
+  "lab_version": "0.1.0",
+  "timestamp_utc": "2026-08-10T00:29:37Z",
+  "duration_s": 16.267288900038693,
+  "status": "ok",
+  "warnings": [],
+  "tags": [],
+  "device": {
+    "device_id": "laptop",
+    "kind": "local",
+    "os": "Windows",
+    "os_release": "10",
+    "distro": "Windows-10-10.0.26200-SP0",
+    "kernel": "10",
+    "machine": "AMD64",
+    "cpu": "12th Gen Intel(R) Core(TM) i7-12700H",
+    "logical_cores": 20,
+    "physical_cores": 14,
+    "ram_bytes": 34014814208,
+    "dram_peak_GBs": 53.9,
+    "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU",
+    "python": "3.11.4",
+    "capabilities": {
+      "temperature": false,
+      "throttle_flags": false,
+      "cpu_freq": false,
+      "pmic": false,
+      "rapl": false,
+      "cpu_utilisation": true,
+      "peak_rss": false,
+      "dvfs_read": false,
+      "dvfs_write": false
+    }
+  },
+  "backend": {
+    "name": "llamacpp",
+    "library_versions": {}
+  },
+  "workload": {
+    "model": "qwen0.5b-q4km",
+    "model_path": "C:/llmpc/models/qwen0.5b-q4km.gguf",
+    "quantization": "Q4_K_M",
+    "prompt_tokens": 1024,
+    "output_tokens": 64
+  },
+  "knobs": {
+    "threads": 8,
+    "repetitions": 3,
+    "extra": {}
+  },
+  "metrics": {
+    "ttft_ms": 4478.639300039504,
+    "prefill_tps": 228.6408731310351,
+    "decode_tps": 68.55262556483999,
+    "e2e_latency_ms": 5391.96170005016,
+    "load_ms": 1547.2873999970034,
+    "extra": {
+      "ttft_spread_pct": 2.2,
+      "requests": 3
+    }
+  },
+  "telemetry": {
+    "cpu_util_pct_mean": 51.49786703733883,
+    "sample_hz": 10.0,
+    "sample_count": 161
+  },
+  "raw": {
+    "requests": [
+      {
+        "prompt_tokens": 1024,
+        "output_tokens": 64,
+        "ttft_ms": 4562.213500030339,
+        "e2e_latency_ms": 5490.679499984253,
+        "decode_tps": 67.85385787215372
+      },
+      {
+        "prompt_tokens": 1024,
+        "output_tokens": 64,
+        "ttft_ms": 4464.874199999031,
+        "e2e_latency_ms": 5383.876200008672,
+        "decode_tps": 68.55262556483999
+      },
+      {
+        "prompt_tokens": 1024,
+        "output_tokens": 64,
+        "ttft_ms": 4478.639300039504,
+        "e2e_latency_ms": 5391.96170005016,
+        "decode_tps": 68.97892792212797
+      }
+    ]
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "run_id": "b6763bcc15be",
+  "experiment": "laptop-overnight",
+  "schema_version": "1.0",
+  "lab_version": "0.1.0",
+  "timestamp_utc": "2026-08-10T00:39:10Z",
+  "duration_s": 3.903915800037794,
+  "status": "ok",
+  "warnings": [],
+  "tags": [],
+  "device": {
+    "device_id": "laptop",
+    "kind": "local",
+    "os": "Windows",
+    "os_release": "10",
+    "distro": "Windows-10-10.0.26200-SP0",
+    "kernel": "10",
+    "machine": "AMD64",
+    "cpu": "12th Gen Intel(R) Core(TM) i7-12700H",
+    "logical_cores": 20,
+    "physical_cores": 14,
+    "ram_bytes": 34014814208,
+    "dram_peak_GBs": 53.9,
+    "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU",
+    "python": "3.11.4",
+    "capabilities": {
+      "temperature": false,
+      "throttle_flags": false,
+      "cpu_freq": false,
+      "pmic": false,
+      "rapl": false,
+      "cpu_utilisation": true,
+      "peak_rss": false,
+      "dvfs_read": false,
+      "dvfs_write": false
+    }
+  },
+  "backend": {
+    "name": "onnxruntime",
+    "version": "1.28.0",
+    "execution_provider": "CPUExecutionProvider",
+    "library_versions": {}
+  },
+  "workload": {
+    "model": "mnv3s-fp32",
+    "model_path": "C:/llmpc/onnx/cifar100_mobilenetv3s_fp32.onnx",
+    "model_bytes": 6491046,
+    "quantization": "fp32",
+    "batch_size": 1,
+    "input_shape": [
+      1,
+      3,
+      32,
+      32
+    ]
+  },
+  "knobs": {
+    "threads": 1,
+    "repetitions": 200,
+    "warmup": 20,
+    "extra": {}
+  },
+  "metrics": {
+    "load_ms": 228.2751000020653,
+    "latency_ms_mean": 0.4392614995595068,
+    "latency_ms_p50": 0.37990001146681607,
+    "latency_ms_p95": 0.8163449878338724,
+    "latency_ms_p99": 0.8976550213992591,
+    "throughput_ips": 2273.0088152901317,
+    "stdev_pct": 29.992846923284443,
+    "extra": {
+      "latency_ms_min": 0.3624000237323344,
+      "latency_ms_max": 0.9515000274404883,
+      "reps": 200,
+      "warmup": 20
+    }
+  },
+  "telemetry": {
+    "cpu_util_pct_mean": 19.067543335325766,
+    "sample_hz": 10.0,
+    "sample_count": 38
+  },
+  "raw": {
+    "stdout": "===MLSYSLAB-ONNX-BEGIN===\r\n{\"status\": \"ok\", \"onnxruntime_version\": \"1.28.0\", \"providers_used\": [\"CPUExecutionProvider\"], \"providers_unavailable\": [], \"model\": \"C:/llmpc/onnx/cifar100_mobilenetv3s_fp32.onnx\", \"inputs\": [{\"name\": \"input\", \"shape\": [1, 3, 32, 32], \"type\": \"tensor(float)\"}], \"threads\": 1, \"reps\": 200, \"warmup\": 20, \"load_ms\": 228.2751000020653, \"latency_ms_mean\": 0.4392614995595068, \"latency_ms_p50\": 0.37990001146681607, \"latency_ms_p95\": 0.8163449878338724, \"latency_ms_p99\": 0.8976550213992591, \"latency_ms_min\": 0.3624000237323344, \"latency_ms_max\": 0.9515000274404883, \"latency_ms_stdev\": 0.13174702915580663, \"throughput_ips\": 2273.0088152901317, \"wall_s\": 0.08798910002224147}\r\n===MLSYSLAB-ONNX-END===\r\n"
+  }
+}
