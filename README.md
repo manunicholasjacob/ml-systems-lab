@@ -1,6 +1,7 @@
 # ML Systems Lab
 
 [![tests](https://github.com/manunicholasjacob/ml-systems-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/manunicholasjacob/ml-systems-lab/actions/workflows/ci.yml)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21867055.svg)](https://doi.org/10.5281/zenodo.21867055)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](pyproject.toml)
 
@@ -194,6 +195,12 @@ tools/               result backfill converters
 results/paper12/     real measurements from the IEEE TC submission
 tests/               65 hardware-free tests (recorded fixtures)
 ```
+
+## Citing
+
+Archived on Zenodo; the concept DOI [10.5281/zenodo.21867055](https://doi.org/10.5281/zenodo.21867055)
+always resolves to the latest version. `CITATION.cff` carries the full citation metadata,
+and GitHub's "Cite this repository" button renders it.
 
 ## License
 
