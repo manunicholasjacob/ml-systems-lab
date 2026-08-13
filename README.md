@@ -9,8 +9,8 @@ A reproducible benchmarking framework for ML inference across heterogeneous hard
 laptops, single-board computers, and servers, from one config file and one command.
 
 ```
-mlsys run configs/llm-matrix.yaml
-mlsys report runs/llm-matrix --full
+mlsys run configs/example-smoke.yaml
+mlsys report runs/smoke-test --full
 ```
 
 Every run produces a self-describing JSON record carrying the hardware, OS, kernel,
