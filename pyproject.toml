@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ml-systems-lab"
-version = "0.1.0"
+version = "0.1.1"
 description = "A reproducible benchmarking framework for ML inference across laptops, single-board computers and servers."
 readme = "README.md"
 requires-python = ">=3.9"

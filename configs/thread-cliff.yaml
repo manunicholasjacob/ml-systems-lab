@@ -1,0 +1,51 @@
+# Hypothesis: On Alder Lake hybrid CPUs (6P + 8E cores), LLM decode throughput
+# peaks at the P-core count and collapses beyond it, with the magnitude of collapse
+# inversely proportional to model size.
+#
+# The i7-12700H has 6 P-cores (3.5-4.7 GHz, large L2) and 8 E-cores (2.3-3.5 GHz,
+# shared L2). At t<=6, only P-cores are scheduled. At t>6, E-cores mix in.
+# Decode is bandwidth-bound (matrix-vector); prefill is compute-bound (matrix-matrix).
+# E-cores have lower IPC and smaller caches, which should hurt decode more than prefill.
+#
+# Test: 11-point thread sweep [1,2,4,6,8,10,12,14,16,18,20] across 3 model sizes
+# (0.5B, 1.5B, 7B) to map the exact decode cliff and confirm prefill doesn't cliff.
+# Total: 33 runs x 3 reps = ~20 min.
+experiment: thread-cliff
+output_dir: runs/thread-cliff
+
+devices:
+  laptop:
+    kind: local
+    python: C:/llmpc/venv311/Scripts/python.exe
+    dram_peak_GBs: 53.9
+    llamacpp:
+      bin_dir: C:/llmpc/bin
+
+models:
+  qwen0.5b-q4km:
+    quantization: Q4_K_M
+    params: 0.5
+    paths:
+      laptop: C:/llmpc/models/qwen0.5b-q4km.gguf
+  qwen1.5b-q4km:
+    quantization: Q4_K_M
+    params: 1.5
+    paths:
+      laptop: C:/llmpc/models/qwen1.5b-q4km.gguf
+  qwen7b-q4km:
+    quantization: Q4_K_M
+    params: 7.62
+    paths:
+      laptop: C:/llmpc/models/qwen7b-q4km.gguf
+
+defaults:
+  backend: llamacpp
+  repetitions: 3
+
+matrix:
+  - devices: [laptop]
+    models: [qwen0.5b-q4km, qwen1.5b-q4km, qwen7b-q4km]
+    modes: [throughput]
+    threads: [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+    prompt_tokens: [128]
+    output_tokens: [128]

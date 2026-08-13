@@ -1,0 +1,86 @@
+# Falsification study for the cross-ISA int8 observation.
+#
+# Observed in the August 2026 campaigns: int8 ResNet18 ran ~11x FASTER than fp32 on the
+# Cortex-A76 and ~3.6x SLOWER than fp32 on the i7-12700H, same model, same runtime family.
+#
+# Candidate explanations to separate, each of which would deflate the result:
+#   H1 (config artifact) the models are S8S8, which x86 VNNI (VPDPBUSD, unsigned x signed)
+#      cannot consume directly while ARM SDOT (signed x signed) can. If U8S8 flips the x86
+#      result, the effect is a quantization-recipe artifact, not a property of the ISA.
+#   H2 (format artifact) QDQ leaves 108 Quantize/Dequantize nodes around 20 convolutions.
+#      QOperator fuses them into 29 QLinearConv. If fusion flips it, the effect is
+#      unfused-node overhead, not int8 arithmetic.
+#   H3 (regime artifact) 32x32 inputs make these graphs overhead-bound rather than
+#      compute-bound. Tested separately with ImageNet-scale models.
+#   H4 (version artifact) the Pi ran ORT 1.24.4 and the laptop 1.28.0. Tested separately
+#      by pinning both to the same version.
+experiment: int8-anomaly
+output_dir: runs/int8-anomaly
+
+devices:
+  laptop:
+    kind: local
+    python: C:/llmpc/venv311/Scripts/python.exe
+    dram_peak_GBs: 53.9
+  pi5:
+    host: 100.98.217.64
+    user: manu
+    identity_file: ~/.ssh/raspberry_pi_key
+    python: python3
+    dram_peak_GBs: 13.98
+
+models:
+  r18-fp32:
+    quantization: fp32
+    paths:
+      laptop: C:/llmpc/onnx/cifar100_resnet18_fp32.onnx
+      pi5: ~/int8study/cifar100_resnet18_fp32.onnx
+  r18-s8s8-qdq:
+    quantization: int8-s8s8-qdq
+    paths:
+      laptop: C:/llmpc/onnx/cifar100_resnet18_s8s8_qdq.onnx
+      pi5: ~/int8study/cifar100_resnet18_s8s8_qdq.onnx
+  r18-u8s8-qdq:
+    quantization: int8-u8s8-qdq
+    paths:
+      laptop: C:/llmpc/onnx/cifar100_resnet18_u8s8_qdq.onnx
+      pi5: ~/int8study/cifar100_resnet18_u8s8_qdq.onnx
+  r18-u8s8-qop:
+    quantization: int8-u8s8-qop
+    paths:
+      laptop: C:/llmpc/onnx/cifar100_resnet18_u8s8_qop.onnx
+      pi5: ~/int8study/cifar100_resnet18_u8s8_qop.onnx
+
+  mnv3-fp32:
+    quantization: fp32
+    paths:
+      laptop: C:/llmpc/onnx/cifar100_mobilenetv3s_fp32.onnx
+      pi5: ~/int8study/cifar100_mobilenetv3s_fp32.onnx
+  mnv3-s8s8-qdq:
+    quantization: int8-s8s8-qdq
+    paths:
+      laptop: C:/llmpc/onnx/cifar100_mobilenetv3s_s8s8_qdq.onnx
+      pi5: ~/int8study/cifar100_mobilenetv3s_s8s8_qdq.onnx
+  mnv3-u8s8-qdq:
+    quantization: int8-u8s8-qdq
+    paths:
+      laptop: C:/llmpc/onnx/cifar100_mobilenetv3s_u8s8_qdq.onnx
+      pi5: ~/int8study/cifar100_mobilenetv3s_u8s8_qdq.onnx
+  mnv3-u8s8-qop:
+    quantization: int8-u8s8-qop
+    paths:
+      laptop: C:/llmpc/onnx/cifar100_mobilenetv3s_u8s8_qop.onnx
+      pi5: ~/int8study/cifar100_mobilenetv3s_u8s8_qop.onnx
+
+defaults:
+  backend: onnxruntime
+  repetitions: 300
+  warmup: 30
+
+matrix:
+  - devices: [laptop, pi5]
+    models: [r18-fp32, r18-s8s8-qdq, r18-u8s8-qdq, r18-u8s8-qop,
+             mnv3-fp32, mnv3-s8s8-qdq, mnv3-u8s8-qdq, mnv3-u8s8-qop]
+    modes: [throughput]
+    threads: [1, 4]
+    batch_sizes: [1]

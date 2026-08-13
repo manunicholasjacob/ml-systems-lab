@@ -1,0 +1,45 @@
+# Example: minimal smoke test for a single local machine.
+#
+# Usage:
+#   1. Edit the paths below to match your machine.
+#   2. Run:  mlsys doctor --config configs/example-smoke.yaml
+#   3. Run:  mlsys run configs/example-smoke.yaml --dry-run
+#   4. Run:  mlsys run configs/example-smoke.yaml
+#   5. Run:  mlsys report runs/smoke-test
+#
+# Models: download GGUF files from https://huggingface.co/models?search=gguf
+#   e.g. https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF
+#   Pick the Q4_K_M variant for a good speed/quality tradeoff.
+#
+# llama.cpp: build from https://github.com/ggml-org/llama.cpp
+#   cmake -B build && cmake --build build --config Release
+#   The bin_dir should contain llama-bench (and llama-server for TTFT).
+
+experiment: smoke-test
+output_dir: runs/smoke-test
+
+devices:
+  local:
+    kind: local
+    # dram_peak_GBs: 40.0  # optional: run `mlsys membw` to measure yours
+    llamacpp:
+      bin_dir: /path/to/llama.cpp/build/bin   # <-- EDIT THIS
+
+models:
+  my-model:
+    quantization: Q4_K_M
+    params: 0.5                                # billions of parameters
+    paths:
+      local: /path/to/model.gguf               # <-- EDIT THIS
+
+defaults:
+  backend: llamacpp
+  repetitions: 3
+
+matrix:
+  - devices: [local]
+    models: [my-model]
+    modes: [throughput]
+    threads: [1, 4]
+    prompt_tokens: [128]
+    output_tokens: [64]

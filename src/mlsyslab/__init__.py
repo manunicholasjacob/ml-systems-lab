@@ -14,6 +14,6 @@ standard library, because it has to run on a 2 GB Raspberry Pi that we do not wa
 install a scientific stack onto.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 __all__ = ["__version__"]

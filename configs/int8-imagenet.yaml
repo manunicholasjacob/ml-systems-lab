@@ -1,0 +1,41 @@
+# H3: Does the signedness asymmetry hold at ImageNet scale (224x224)?
+# ResNet50 v1 is 49x more FLOPS than CIFAR ResNet18 (32x32).
+# If the effect disappears at scale, the CIFAR result is overhead-bound noise.
+experiment: int8-imagenet
+output_dir: runs/int8-imagenet
+
+devices:
+  laptop:
+    kind: local
+    python: C:/llmpc/venv311/Scripts/python.exe
+    dram_peak_GBs: 53.9
+
+models:
+  rn50-fp32:
+    quantization: fp32
+    paths:
+      laptop: C:/llmpc/imagenet/resnet50_v1_fp32.onnx
+  rn50-s8s8-qdq:
+    quantization: int8-s8s8-qdq
+    paths:
+      laptop: C:/llmpc/imagenet/resnet50_v1_s8s8_qdq.onnx
+  rn50-u8s8-qdq:
+    quantization: int8-u8s8-qdq
+    paths:
+      laptop: C:/llmpc/imagenet/resnet50_v1_u8s8_qdq.onnx
+  rn50-u8s8-qop:
+    quantization: int8-u8s8-qop
+    paths:
+      laptop: C:/llmpc/imagenet/resnet50_v1_u8s8_qop.onnx
+
+defaults:
+  backend: onnxruntime
+  repetitions: 200
+  warmup: 20
+
+matrix:
+  - devices: [laptop]
+    models: [rn50-fp32, rn50-s8s8-qdq, rn50-u8s8-qdq, rn50-u8s8-qop]
+    modes: [throughput]
+    threads: [1, 4]
+    batch_sizes: [1]

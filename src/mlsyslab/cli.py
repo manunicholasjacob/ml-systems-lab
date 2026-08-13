@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import platform
 import sys
 from typing import List, Optional
 
@@ -191,6 +192,85 @@ def _cmd_membw(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_doctor(args: argparse.Namespace) -> int:
+    """Check that the local environment is ready to run experiments."""
+    import shutil
+
+    from . import devices as device_registry
+
+    ok = True
+
+    print("ml-systems-lab doctor")
+    print("=" * 40)
+
+    print(f"\n  Python        : {sys.executable} ({platform.python_version()})")
+    print(f"  Platform      : {platform.platform()}")
+    print(f"  Lab version   : {__version__}")
+
+    # Check optional dependencies
+    print("\nDependencies:")
+    for pkg, extra in [("yaml", "PyYAML (required for YAML configs)"),
+                       ("numpy", "numpy (required for analysis)"),
+                       ("matplotlib", "matplotlib (required for figures)"),
+                       ("onnxruntime", "onnxruntime (optional, ORT backend)")]:
+        try:
+            mod = __import__(pkg)
+            ver = getattr(mod, "__version__", "?")
+            print(f"  [ok] {extra} {ver}")
+        except ImportError:
+            severity = "MISSING" if pkg in ("yaml",) else "skip"
+            if severity == "MISSING":
+                ok = False
+            print(f"  [{severity}] {extra}")
+
+    # Check llama.cpp binaries
+    print("\nllama.cpp:")
+    for binary in ("llama-bench", "llama-server", "llama-cli"):
+        path = shutil.which(binary)
+        if path:
+            print(f"  [ok] {binary} -> {path}")
+        else:
+            print(f"  [skip] {binary} not on PATH")
+
+    # Check config if provided
+    if args.config:
+        print(f"\nConfig: {args.config}")
+        try:
+            from .config import load
+            config = load(args.config)
+            print(f"  experiment : {config.experiment}")
+            print(f"  devices    : {', '.join(config.devices)}")
+            print(f"  models     : {len(config.models)}")
+            print(f"  run specs  : {len(config.specs)}")
+
+            for name, model_cfg in config.models.items():
+                for dev_id, path in (model_cfg.get("paths") or {}).items():
+                    exists = os.path.isfile(path)
+                    tag = "ok" if exists else "MISSING"
+                    if not exists:
+                        ok = False
+                    print(f"  [{tag}] {name} @ {dev_id}: {path}")
+
+            for dev_id, dev_cfg in config.devices.items():
+                try:
+                    device = device_registry.from_config(dev_id, dev_cfg)
+                    info = device.device_info()
+                    print(f"  [ok] device '{dev_id}': {info.get('cpu', '?')}")
+                except Exception as exc:
+                    print(f"  [FAIL] device '{dev_id}': {exc}")
+                    ok = False
+        except Exception as exc:
+            print(f"  [FAIL] could not load: {exc}")
+            ok = False
+
+    print()
+    if ok:
+        print("All checks passed.")
+    else:
+        print("Some checks failed; see [MISSING] / [FAIL] above.")
+    return 0 if ok else 1
+
+
 def _cmd_compare(args: argparse.Namespace) -> int:
     """Same workload measured in two result sets, side by side with the ratio."""
     from .analysis import Dataset
@@ -286,6 +366,10 @@ def build_parser() -> argparse.ArgumentParser:
     compare.add_argument("--format", choices=["text", "markdown", "latex"],
                          default="text")
     compare.set_defaults(func=_cmd_compare)
+
+    doctor = sub.add_parser("doctor", help="check that the environment is ready")
+    doctor.add_argument("--config", help="also validate a config file's paths and devices")
+    doctor.set_defaults(func=_cmd_doctor)
 
     return parser
 

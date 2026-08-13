@@ -94,7 +94,16 @@ and their inference backend (a llama.cpp build and/or onnxruntime), nothing else
 
 ## Quick start
 
-1. Describe your machines and models once:
+A ready-to-edit template lives at `configs/example-smoke.yaml`. Copy it, fill in
+your paths, and run:
+
+```
+mlsys doctor --config configs/example-smoke.yaml   # check everything is wired up
+mlsys run configs/example-smoke.yaml               # run the experiment
+mlsys report runs/smoke-test                       # see the results
+```
+
+For a multi-device setup, describe your machines and models once:
 
 ```yaml
 # configs/lab.yaml
@@ -151,9 +160,13 @@ mlsys report runs/my-sweep --format latex  # booktabs, ready to paste
 mlsys report runs/my-sweep --full          # REPORT.md + PNG/PDF figures
 ```
 
-5. Two more tools:
+5. More tools:
 
 ```
+mlsys doctor --config configs/lab.yaml
+    # checks Python, dependencies, llama.cpp binaries, model paths,
+    # and device reachability; run this first if something is not working
+
 mlsys membw --device pi5 --config configs/lab.yaml
     # measures the device's achievable DRAM read ceiling and prints the
     # dram_peak_GBs line to put in the config, with a stability check that
@@ -193,7 +206,7 @@ src/mlsyslab/
 configs/             experiment definitions
 tools/               result backfill converters
 results/paper12/     real measurements from the IEEE TC submission
-tests/               65 hardware-free tests (recorded fixtures)
+tests/               70 hardware-free tests (recorded fixtures)
 ```
 
 ## Citing

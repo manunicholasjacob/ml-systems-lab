@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.1.1 (2026-08-13)
+
+Reproducibility and onboarding release.
+
+### Added
+
+- `mlsys doctor` command: checks Python version, dependencies, llama.cpp binaries,
+  and (with `--config`) validates model paths and device reachability. Run this first
+  when something is not working.
+- `python -m mlsyslab` support (`__main__.py`), so the package works without the
+  console script installed.
+- `configs/example-smoke.yaml`: a ready-to-edit template config with download
+  instructions and placeholder paths. Copy, fill in your paths, and run.
+- `runs/thread-cliff/`: 33-point thread-scaling experiment (P-core/E-core decode
+  cliff on Alder Lake i7-12700H).
+
+### Fixed
+
+- README test count corrected to 70 (was 65).
+- Quick start now leads with `mlsys doctor` and the template config before showing
+  the full multi-device example.
+
 ## 0.1.0 (2026-08-10)
 
 First release. Everything below was built and validated against real hardware in one
