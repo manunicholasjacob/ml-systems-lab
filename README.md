@@ -1,6 +1,7 @@
 # ML Systems Lab
 
 [![tests](https://github.com/manunicholasjacob/ml-systems-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/manunicholasjacob/ml-systems-lab/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/ml-systems-lab.svg)](https://pypi.org/project/ml-systems-lab/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21867055.svg)](https://doi.org/10.5281/zenodo.21867055)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](pyproject.toml)
@@ -9,6 +10,7 @@ A reproducible benchmarking framework for ML inference across heterogeneous hard
 laptops, single-board computers, and servers, from one config file and one command.
 
 ```
+pip install ml-systems-lab
 mlsys run configs/example-smoke.yaml
 mlsys report runs/smoke-test --full
 ```
