@@ -7,10 +7,31 @@ authors:
     given-names: "Manu Nicholas"
     orcid: "https://orcid.org/0009-0007-6589-6572"
 repository-code: "https://github.com/manunicholasjacob/ml-systems-lab"
+url: "https://github.com/manunicholasjacob/ml-systems-lab"
 doi: "10.5281/zenodo.21867055"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.21867055"
+    description: "Concept DOI, always resolves to the latest archived version"
+  - type: doi
+    value: "10.5281/zenodo.21867056"
+    description: "DOI for version v0.1.0, the most recent archived release"
+abstract: >-
+  A benchmarking framework for ML inference across heterogeneous hardware. One
+  configuration file and one command execute an experiment matrix across any mix of
+  machines, over SSH or locally, and every measurement returns as a single
+  self-describing JSON record carrying the hardware, OS, kernel, compiler, backend
+  version and build commit, model, quantization, the metrics, and the physical state of
+  the machine while they were taken: per-rail power, temperature, clocks, throttle flags
+  and memory pressure. It measures time to first token, prefill and decode throughput,
+  request latency percentiles, peak resident memory, and derives decode bandwidth and
+  roofline utilization. Run identifiers are deterministic over the specification, so an
+  interrupted campaign resumes and a corrected point re-executes exactly, and failures
+  are records with their raw output preserved rather than exceptions. The analysis layer
+  turns a directory of records into publication-quality tables and figures.
 license: MIT
 version: 0.1.1
-date-released: 2026-08-13
+date-released: "2026-08-13"
 keywords:
   - benchmarking
   - inference
@@ -21,3 +42,18 @@ keywords:
   - roofline
   - energy
   - reproducibility
+references:
+  - type: software
+    title: "llama.cpp"
+    authors:
+      - name: "The llama.cpp contributors"
+    repository-code: "https://github.com/ggml-org/llama.cpp"
+    license: MIT
+    notes: "One of the two inference backends this framework drives."
+  - type: software
+    title: "ONNX Runtime"
+    authors:
+      - name: "The ONNX Runtime contributors"
+    repository-code: "https://github.com/microsoft/onnxruntime"
+    license: MIT
+    notes: "The other inference backend, used for the vision and cross-ISA work."
