@@ -25,3 +25,8 @@ scratch/
 
 .DS_Store
 Thumbs.db
+
+# Session tooling that is not part of this project
+.claude/
+CLAUDE.md
+graphify-out/

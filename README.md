@@ -25,7 +25,7 @@ Built and used for a real research program: the records under `results/paper12/`
 measurements behind an IEEE Transactions on Computers submission, and the framework
 reproduces that paper's published roofline fits exactly (Pi 5: 10.7 GB/s effective,
 R^2 = 0.980; i7-12700H: 35.7 GB/s, R^2 = 0.980). Two campaigns run natively by this
-framework then re-measured the same quantities independently and agreed within 1.6%.
+framework then re-measured the same quantities independently and agreed within 1.7%.
 
 ## Statement of need
 
@@ -129,7 +129,7 @@ From a checkout, which is what you want if you intend to change anything:
 git clone https://github.com/manunicholasjacob/ml-systems-lab
 cd ml-systems-lab
 pip install -e ".[dev]"                    # adds pytest
-python -m pytest -q                        # 74 tests, no hardware needed, about 15 seconds
+python -m pytest -q                        # 78 tests, no hardware needed, about 25 seconds
 ```
 
 Dependencies are numpy, matplotlib and PyYAML, all pulled in automatically. The
@@ -262,7 +262,7 @@ src/mlsyslab/
 configs/             experiment definitions
 tools/               result backfill converters
 results/paper12/     real measurements from the IEEE TC submission
-tests/               74 hardware-free tests (recorded fixtures)
+tests/               78 hardware-free tests (recorded fixtures)
 ```
 
 ## Documentation
@@ -283,7 +283,7 @@ pip install -e ".[dev]"
 python -m pytest -q
 ```
 
-Seventy-four tests, no hardware required. Recorded `llama-bench` output and canned agent
+Seventy-eight tests, no hardware required. Recorded `llama-bench` output and canned agent
 results stand in for devices, so the suite runs the same on a laptop and in CI, where it
 runs on Linux, macOS and Windows against Python 3.9, 3.12 and 3.13, plus a job that
 installs without numpy, matplotlib or PyYAML and checks the measurement core still

@@ -13,6 +13,15 @@ quantization sweep, PMIC energy per token, and the x86 cross-platform validation
 7B. The framework reproduces the paper's published fits exactly (Pi 10.7 GB/s, x86
 35.7 GB/s, both R^2 = 0.980), which is the correctness check for the whole pipeline.
 
+One record in this set reports 107% of the declared bandwidth ceiling, and the framework
+flags it rather than clipping it. The cause is the ceiling, not the measurement. These
+records carry the ceiling the paper declared for the laptop, 42.1 GB/s, which came from a
+single-stream summation kernel. A two-stream dot-product kernel through BLAS reaches about
+54 GB/s on the same machine, and that is the figure every config in this repository now
+declares. The paper's number is left in place because changing it would make this
+reproduction disagree with the paper it reproduces, which is the opposite of the point.
+Read any percentage against a declared ceiling as being only as good as that declaration.
+
 ## pi5-campaign/
 
 The first campaign run natively by this framework (August 2026, 43 points, one config:
@@ -55,5 +64,5 @@ They are flagged in-record rather than excluded.
 ## combined-report/
 
 Tables and figures over everything above at once. Two independent Pi campaigns agree
-on the effective bandwidth within 1.6%; the x86 to A76 decode ratio is 3.3 to 3.5x
+on the effective bandwidth within 1.7%; the x86 to A76 decode ratio is 3.3 to 3.5x
 on every shared model; and the decode roofline holds on both architectures.
