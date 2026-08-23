@@ -18,9 +18,16 @@ Method (adapted from the validated llama-roofline implementation):
   as unstable. Best-of-N cannot see *constant* background load: the same machine that
   measures 50.7 GB/s idle measured 14.1 GB/s while a package manager ran.
 
-Requires numpy on the machine being measured. Run directly for JSON:
+The same discipline is applied to accelerator memory by :func:, which
+reaches the device through torch and times on the stream with CUDA events rather than
+around an asynchronous launch. It reports the ceiling as absent when there is no device,
+because a GPU roofline built on a datasheet number has the same failure mode as a CPU one.
+
+Requires numpy on the machine being measured, and torch for the device path. Run directly
+for JSON:
 
     python -m mlsyslab.membw --json
+    python -m mlsyslab.membw --device --json
 """
 
 from __future__ import annotations
@@ -157,15 +164,165 @@ def measure(working_set_mb: Optional[int] = None,
     return out
 
 
+# --------------------------------------------------------------- accelerator memory
+
+# A GPU roofline needs a measured HBM or GDDR read ceiling for exactly the reason the CPU
+# one does: `dram_peak_GBs` is the denominator of every utilisation percentage, and a
+# datasheet figure turns a wrong assumption into a confident-looking number.
+#
+# The discipline is the same as the CPU path above and is not repeated by accident:
+# read-only kernels only, copy measured for context and excluded because write-allocate
+# inflates it, best of N across configurations, every repetition kept, and the
+# median-to-best stability flag. On a rented GPU the stability flag matters more than it
+# does on a laptop, because another tenant may be on the same host and best-of-N cannot
+# see steady contention.
+#
+# torch is the vehicle rather than a dependency. It is preinstalled on Kaggle and Colab,
+# which is where this path is meant to run, and it is imported lazily so a device without
+# it reports the ceiling as absent instead of failing.
+
+DEVICE_WORKING_SET_MB = 1024
+DEVICE_MIN_FREE_FRACTION = 0.25
+
+
+class AcceleratorUnavailable(RuntimeError):
+    """No accelerator this module knows how to measure."""
+
+
+def _torch():
+    try:
+        import torch
+    except ImportError:
+        return None
+    return torch
+
+
+def device_available() -> bool:
+    torch = _torch()
+    return bool(torch and torch.cuda.is_available())
+
+
+def _device_working_set_bytes(torch, requested_mb: Optional[int]) -> int:
+    """Big enough to defeat the last-level cache, small enough to leave the card usable."""
+    free, total = torch.cuda.mem_get_info()
+    ceiling = int(free * (1.0 - DEVICE_MIN_FREE_FRACTION))
+    wanted = (requested_mb or DEVICE_WORKING_SET_MB) * 1024 * 1024
+    chosen = min(wanted, ceiling)
+    if chosen < MIN_WORKING_SET_MB * 1024 * 1024:
+        raise AcceleratorUnavailable(
+            f"only {free / 1e6:.0f} MB free on the device, which is not enough to measure "
+            f"a ceiling without evicting whatever else is resident")
+    return chosen
+
+
+def measure_device(working_set_mb: Optional[int] = None, reps: int = 7,
+                   index: int = 0) -> Dict[str, Any]:
+    """Achievable device-memory read bandwidth, measured on the accelerator itself.
+
+    Raises :class:`AcceleratorUnavailable` rather than returning a guess when there is no
+    device or no torch.
+    """
+    torch = _torch()
+    if torch is None:
+        raise AcceleratorUnavailable(
+            "torch is not installed, and it is what this path uses to reach the device. "
+            "Install it, or declare dram_peak_GBs in the device config and say where the "
+            "number came from.")
+    if not torch.cuda.is_available():
+        raise AcceleratorUnavailable("torch is installed but reports no CUDA device")
+
+    torch.cuda.set_device(index)
+    nbytes = _device_working_set_bytes(torch, working_set_mb)
+    n = nbytes // 4  # float32
+
+    a = torch.ones(n, dtype=torch.float32, device="cuda")
+    b = torch.ones(n, dtype=torch.float32, device="cuda")
+    dst = torch.empty_like(a)
+
+    def timed(fn, moved: int) -> List[float]:
+        """Rates in GB/s, one per repetition, timed on the device rather than the host.
+
+        CUDA events time the stream itself. A host-side timer around an asynchronous
+        launch measures the launch, which on a small kernel is most of what it reports.
+        """
+        out: List[float] = []
+        start = torch.cuda.Event(enable_timing=True)
+        end = torch.cuda.Event(enable_timing=True)
+        fn()  # warm the kernel and the allocator out of the timed region
+        torch.cuda.synchronize()
+        for _ in range(reps):
+            start.record()
+            fn()
+            end.record()
+            torch.cuda.synchronize()
+            ms = start.elapsed_time(end)
+            if ms > 0:
+                out.append(moved / (ms / 1000.0) / 1e9)
+        return out
+
+    try:
+        raw = {
+            "sum": timed(lambda: a.sum(), a.numel() * 4),
+            "max": timed(lambda: a.max(), a.numel() * 4),
+            "dot": timed(lambda: torch.dot(a, b), 2 * a.numel() * 4),
+            "copy": timed(lambda: dst.copy_(a), 2 * a.numel() * 4),
+        }
+    finally:
+        del a, b, dst
+        torch.cuda.empty_cache()
+
+    best = {k: max(v, default=0.0) for k, v in raw.items()}
+    read_kernels = ("sum", "max", "dot")
+    peak_kernel = max(read_kernels, key=lambda k: best[k])
+    peak = best[peak_kernel]
+    winning = raw[peak_kernel]
+    stability = (_median(winning) / peak) if peak and winning else None
+
+    props = torch.cuda.get_device_properties(index)
+    out: Dict[str, Any] = {
+        "peak_read_GBs": round(peak, 3),
+        "best_kernel": peak_kernel,
+        "copy_GBs": round(best["copy"], 3),
+        "working_set_mb": round(nbytes / 1024 / 1024),
+        "reps": reps,
+        "stability": round(stability, 4) if stability is not None else None,
+        "by_kernel_GBs": {k: [round(x, 3) for x in v] for k, v in raw.items()},
+        "device_index": index,
+        "device_name": props.name,
+        "device_total_MiB": round(props.total_memory / 1048576),
+        "compute_capability": f"{props.major}.{props.minor}",
+        "torch_version": torch.__version__,
+        "method": ("torch read-only reductions on the device, timed with CUDA events; "
+                   "ceiling is the best read-only kernel and is a measured lower bound"),
+        "source": "measured",
+        "target": "device",
+    }
+    if stability is not None and stability < STABILITY_THRESHOLD:
+        out["unstable"] = True
+        out["warning"] = (
+            f"device bandwidth was unstable: repetitions varied by "
+            f"{100 * (1 - stability):.0f}% around the best result. On a shared host that "
+            f"usually means another tenant. Re-run, and do not put this number in a "
+            f"config until it repeats.")
+    return out
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(prog="mlsyslab.membw")
     parser.add_argument("--mb", type=int, help="working set in MB")
     parser.add_argument("--reps", type=int, default=5)
     parser.add_argument("--json", action="store_true", help="bare JSON, no sentinels")
+    parser.add_argument("--device", action="store_true",
+                        help="measure the accelerator's memory instead of the host's")
+    parser.add_argument("--device-index", type=int, default=0)
     args = parser.parse_args(argv)
 
     try:
-        result = measure(working_set_mb=args.mb, reps=args.reps)
+        if args.device:
+            result = measure_device(working_set_mb=args.mb, reps=args.reps or 7,
+                                    index=args.device_index)
+        else:
+            result = measure(working_set_mb=args.mb, reps=args.reps)
     except Exception as exc:
         result = {"status": "failed", "error": f"{type(exc).__name__}: {exc}"}
 

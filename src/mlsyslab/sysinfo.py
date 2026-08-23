@@ -201,11 +201,78 @@ def libc() -> Optional[str]:
     return f"{name} {version}".strip() or None
 
 
-def gpu() -> Optional[str]:
-    """Best-effort GPU name. Present so the abstraction is real rather than aspirational.
+# Everything nvidia-smi will tell us about a card, mapped to the field it becomes.
+# Deliberately nvidia-smi rather than NVML: it is present wherever a driver is, needs no
+# package installed, and the agent that runs on the device under test may not have one.
+_SMI_FIELDS = [
+    ("name", "name"),
+    ("driver_version", "driver"),
+    ("compute_cap", "compute_capability"),
+    ("memory.total", "memory_total_MiB"),
+    ("pcie.link.gen.current", "pcie_gen"),
+    ("pcie.link.width.current", "pcie_width"),
+    ("enforced.power.limit", "enforced_power_limit_W"),
+    ("power.limit", "power_limit_W"),
+    ("ecc.mode.current", "ecc_mode"),
+    ("clocks.max.sm", "sm_clock_max_MHz"),
+    ("clocks.max.mem", "mem_clock_max_MHz"),
+    ("persistence_mode", "persistence_mode"),
+]
 
-    There is no GPU machine in this lab yet, so this is deliberately a thin probe: it
-    reports what it can find and None otherwise, and no analysis depends on it.
+# nvidia-smi answers "[N/A]" for anything the part does not expose. Consumer cards refuse
+# the power-management limit and ECC state; datacenter cards generally answer everything.
+# Absent is recorded as absent, never as zero.
+_SMI_ABSENT = {"[n/a]", "[not supported]", "n/a", "", "unknown error"}
+
+
+# Version-shaped fields stay strings. Compute capability 8.6 is not the number 8.6, and
+# treating it as one would make 8.10 sort below 8.6 the moment such a part exists.
+_SMI_STRING_FIELDS = {"compute_capability", "driver", "name", "ecc_mode",
+                      "persistence_mode"}
+
+
+def _smi_value(raw: str, key: Optional[str] = None) -> Optional[Any]:
+    """Parse one nvidia-smi CSV cell, stripping its unit and dropping non-answers."""
+    text = raw.strip()
+    if text.lower() in _SMI_ABSENT:
+        return None
+    if key in _SMI_STRING_FIELDS:
+        return text
+    stripped = re.sub(r"\s*(MiB|W|MHz)$", "", text).strip()
+    try:
+        return float(stripped) if "." in stripped else int(stripped)
+    except ValueError:
+        return text
+
+
+def gpus() -> List[Dict[str, Any]]:
+    """One dict per NVIDIA GPU, with the fields that change what a measurement means.
+
+    Compute capability decides which runtimes will load at all: vLLM needs 7.5 or better,
+    so a T4 works and a P100 does not. The enforced power limit and the ECC mode both move
+    throughput and neither is visible from the card's name, which is why a run on a rented
+    GPU has to record them rather than assume the defaults.
+    """
+    query = ",".join(f for f, _ in _SMI_FIELDS)
+    out = _run(["nvidia-smi", f"--query-gpu={query}", "--format=csv,noheader"])
+    if not out or not out.strip():
+        return []
+    found: List[Dict[str, Any]] = []
+    for index, line in enumerate(out.strip().splitlines()):
+        cells = line.split(",")
+        if len(cells) != len(_SMI_FIELDS):
+            continue
+        entry: Dict[str, Any] = {"index": index}
+        for (_, key), cell in zip(_SMI_FIELDS, cells):
+            entry[key] = _smi_value(cell, key)
+        found.append(entry)
+    return found
+
+
+def gpu() -> Optional[str]:
+    """Best-effort GPU name, kept as a plain string for the existing schema field.
+
+    :func:`gpus` is the one to use for anything that depends on what the card can do.
     """
     out = _run(["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"])
     if out and out.strip():
@@ -253,6 +320,7 @@ def collect(device_id: Optional[str] = None, kind: str = "local") -> Dict[str, A
         "swap_bytes": total_swap_bytes(),
         "board_model": board_model(),
         "gpu": gpu(),
+        "gpus": gpus(),
         "python": platform.python_version(),
         "compiler": compiler(),
         "libc": libc(),

@@ -40,7 +40,15 @@ def _clean(obj: Any) -> Any:
 
 @dataclass
 class DeviceInfo:
-    """What the hardware is. Collected automatically, never typed in by hand."""
+    """What the hardware is. Collected automatically, never typed in by hand.
+
+    ``gpus`` carries one entry per accelerator, from :func:`mlsyslab.sysinfo.gpus`, with
+    the fields that change what a measurement means rather than only the marketing name:
+    ``compute_capability`` (vLLM will not load below 7.5, so a T4 runs and a P100 does
+    not), ``memory_total_MiB``, ``enforced_power_limit_W``, ``ecc_mode``, ``pcie_gen`` and
+    ``pcie_width``. A rented GPU can arrive power-capped or with ECC on, and neither is
+    visible from the card's name.
+    """
 
     device_id: str = "unknown"          # stable label, e.g. "pi5-2gb" or "laptop-i7-12700h"
     kind: str = "local"                 # local | ssh
@@ -58,7 +66,8 @@ class DeviceInfo:
     dram_peak_GBs: Optional[float] = None   # datasheet peak, for roofline utilisation
     dram_measured_GBs: Optional[float] = None  # best read-only kernel we could achieve
     board_model: Optional[str] = None       # Raspberry Pi 5 Model B Rev 1.0
-    gpu: Optional[str] = None
+    gpu: Optional[str] = None                # human-readable name, kept for continuity
+    gpus: List[Dict[str, Any]] = field(default_factory=list)
     accelerator: Optional[str] = None
     python: Optional[str] = None
     compiler: Optional[str] = None
@@ -155,6 +164,18 @@ class Telemetry:
     idle_power_w: Optional[float] = None
     energy_j: Optional[float] = None
     energy_per_token_mj: Optional[float] = None
+    # Accelerator energy is kept apart from host energy rather than summed into it. The
+    # two come from different instruments with different error, and on a cloud VM the
+    # host figure may be absent while the GPU one is not.
+    gpu_power_w_mean: Optional[float] = None
+    gpu_energy_j: Optional[float] = None
+    gpu_energy_per_token_mj: Optional[float] = None
+    gpu_temp_c_max: Optional[float] = None
+    gpu_util_pct_mean: Optional[float] = None
+    # Which instrument produced the two above: "nvml_energy_counter" is a monotonic
+    # counter and "nvidia_smi_instantaneous" is an integral of samples. They are not the
+    # same measurement and a record that does not say which is not comparable.
+    energy_source: Optional[str] = None
     temp_c_start: Optional[float] = None
     temp_c_mean: Optional[float] = None
     temp_c_max: Optional[float] = None

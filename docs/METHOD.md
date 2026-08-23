@@ -114,3 +114,43 @@ To reproduce the paper-12 tables and figures from the shipped records:
 ```
 mlsys report results/paper12 --full
 ```
+
+
+## Accelerators
+
+The device abstraction covers a GPU without a new device class, which surprised the person
+who scoped it and is worth writing down: a Kaggle or Colab notebook runs the agent locally
+because the notebook is the host, and a rented cloud box is SSH. Both already have a device.
+What a GPU needs is telemetry and a ceiling.
+
+**Identity.** `sysinfo.gpus()` reads `nvidia-smi` rather than NVML, because nvidia-smi is
+present wherever a driver is and needs nothing installed, and the agent that runs on the
+device under test may have nothing installed. It records compute capability, VRAM, driver,
+PCIe generation and width, the enforced power limit and the ECC mode. Those last two are
+the reason a name is not enough: a rented card can arrive power-capped or with ECC on, and
+both move the result. Anything the part refuses is recorded absent, which on a consumer
+card is the power-management limit and the ECC state.
+
+**Energy.** Two paths, and they are the same two shapes the CPU already had. NVML's
+`nvmlDeviceGetTotalEnergyConsumption` is a monotonic millijoule counter, which is the RAPL
+shape: energy comes out directly and the read is nearly free. `nvidia-smi` gives
+instantaneous watts at the cost of a process spawn, which is the PMIC shape and carries the
+PMIC warning. Prefer the counter. On an RTX 3050 the integral of the samples read 24 to 41
+percent higher than the counter across rates from 0.5 to 20 Hz, and mean sampled power rose
+from 3.4 to 6.7 W as the rate rose while the counter said 2.3 to 4.4 W over the same
+windows, so the act of sampling was waking the device. Every record names which instrument
+produced its energy, because an integral and a counter are not the same measurement.
+
+**Ceiling.** `membw.measure_device` measures achievable device-memory read bandwidth with
+the same rules as the host path: read-only kernels, copy measured and excluded, best of N,
+and the median-to-best stability flag. It times with CUDA events on the stream rather than
+around an asynchronous launch, which would measure the launch. It reaches the device
+through torch, lazily, and reports the ceiling absent rather than falling back to a
+datasheet number, because a wrong denominator is how a roofline lies quietly.
+
+**What is unrun.** The CUDA kernels in `measure_device` have not executed on a real card.
+Everything around them is tested off recorded `nvidia-smi` output and stubbed imports, in
+the usual hardware-free way, and the identity and instantaneous-power paths were checked
+against an RTX 3050. The first datacenter session should start by running
+`python -m mlsyslab.membw --device --json` and sanity-checking the number against the
+part's datasheet before trusting any percentage derived from it.

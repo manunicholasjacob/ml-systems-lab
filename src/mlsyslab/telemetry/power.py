@@ -10,8 +10,12 @@ Two sources are supported, and they are not equivalent:
   It is nearly free to sample and gives package energy directly, but it is Linux only and
   says nothing about DRAM on most consumer parts.
 
-Windows exposes neither without a kernel driver, so it reports None. An absent number is
-better than an invented one.
+* **NVIDIA GPU**, either through NVML's monotonic millijoule counter, which is the RAPL
+  shape, or through nvidia-smi for instantaneous watts, which is the PMIC shape. The
+  counter is the one to prefer where the part implements it.
+
+Windows exposes neither CPU source without a kernel driver, so it reports None for those.
+An absent number is better than an invented one.
 """
 
 from __future__ import annotations
@@ -124,6 +128,126 @@ def rapl_delta_j(before: int, after: int) -> float:
     return 0.0
 
 
+# ------------------------------------------------------------------ NVIDIA GPU
+
+# Two ways in, and they are not equivalent, which is the same story as PMIC against RAPL.
+#
+# NVML through `nvidia-ml-py` gives `nvmlDeviceGetTotalEnergyConsumption`, a monotonic
+# millijoule counter. That is structurally the RAPL shape: energy comes out directly, the
+# read is nearly free, and a GPU run can carry a real energy per token rather than an
+# integral of samples. It needs a package installed, which the on-device agent may not
+# have, so the import is lazy and its absence is not an error.
+#
+# `nvidia-smi` is the fallback. It is present wherever a driver is and needs nothing
+# installed, but it gives only instantaneous watts and costs a process spawn per sample,
+# which is the PMIC shape and carries the same warning: do not sample power in the run you
+# take throughput from.
+#
+# Prefer the counter, and the reason is measured rather than assumed. On an RTX 3050
+# (leverage/gpu-access/nvml_rate_sweep_rtx3050.json) the trapezoid of the power samples
+# and the counter disagreed by 24 to 41 percent across sampling rates from 0.5 to 20 Hz,
+# always in the same direction: the samples read high. The sampler is why. A single
+# power read cost 53 to 425 ms, and mean sampled power climbed from 3.4 to 6.7 W as the
+# rate rose while the counter said 2.3 to 4.4 W over the same windows, so the act of
+# asking was waking the device. Whether that gap survives on datacenter silicon is
+# unmeasured, and it is the first thing to check on one.
+
+_SMI = "nvidia-smi"
+
+
+def _nvml():
+    """Import NVML lazily, returning None when it is not installed."""
+    try:
+        import pynvml  # nvidia-ml-py installs under this name
+    except ImportError:
+        return None
+    return pynvml
+
+
+def nvml_available() -> bool:
+    """True when the energy counter can actually be read on device 0."""
+    return read_nvml_energy_mj() is not None
+
+
+def read_nvml_energy_mj(index: int = 0) -> Optional[int]:
+    """Total energy consumed by the GPU since the driver loaded, in millijoules.
+
+    Monotonic, so a delta between two reads is the energy of the window and no
+    integration is involved. Returns None when NVML is absent or the part does not
+    implement the counter.
+    """
+    nvml = _nvml()
+    if nvml is None:
+        return None
+    try:
+        nvml.nvmlInit()
+    except Exception:
+        return None
+    try:
+        handle = nvml.nvmlDeviceGetHandleByIndex(index)
+        return int(nvml.nvmlDeviceGetTotalEnergyConsumption(handle))
+    except Exception:
+        return None
+    finally:
+        try:
+            nvml.nvmlShutdown()
+        except Exception:
+            pass
+
+
+def nvml_delta_j(before: int, after: int) -> float:
+    """Energy between two counter reads, in joules.
+
+    Unlike RAPL this counter does not wrap in any practical window: it is 64-bit
+    millijoules since driver load. A decrease therefore means the driver was reloaded
+    between the reads, not a wrap, and the honest answer is zero rather than a guess.
+    """
+    return (after - before) / 1000.0 if after >= before else 0.0
+
+
+def gpu_smi_available() -> bool:
+    return bool(_run_smi(["--query-gpu=name", "--format=csv,noheader"]))
+
+
+def _run_smi(args: List[str]) -> Optional[str]:
+    try:
+        out = subprocess.run([_SMI] + args, stdout=subprocess.PIPE,
+                             stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL,
+                             timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if out.returncode != 0:
+        return None
+    text = out.stdout.decode("utf-8", errors="replace").strip()
+    return text or None
+
+
+def read_gpu_power_w(index: int = 0) -> Optional[float]:
+    """Instantaneous GPU power draw in watts, via nvidia-smi. One process spawn."""
+    text = _run_smi(["-i", str(index), "--query-gpu=power.draw",
+                     "--format=csv,noheader,nounits"])
+    if not text:
+        return None
+    try:
+        return float(text.splitlines()[0].strip())
+    except ValueError:
+        return None
+
+
+def gpu_energy_source(index: int = 0) -> Optional[str]:
+    """Which of the two GPU paths this machine can use, if either.
+
+    Named rather than inferred at the call site, because a record that says its energy
+    came from a counter and one that says it came from integrated samples are different
+    measurements and should not be compared as if they were the same.
+    """
+    if read_nvml_energy_mj(index) is not None:
+        return "nvml_energy_counter"
+    if read_gpu_power_w(index) is not None:
+        return "nvidia_smi_instantaneous"
+    return None
+
+
 # ------------------------------------------------------------------- integration
 
 def integrate_energy(samples: List[Tuple[float, float]]) -> Optional[float]:
@@ -159,4 +283,10 @@ def measure_idle_power_w(seconds: float = 3.0, period: float = 0.1) -> Optional[
 
 
 def describe() -> dict:
-    return {"pmic": pmic_available(), "rapl": rapl_available()}
+    return {
+        "pmic": pmic_available(),
+        "rapl": rapl_available(),
+        "nvml": nvml_available(),
+        "nvidia_smi": gpu_smi_available(),
+        "gpu_energy_source": gpu_energy_source(),
+    }
