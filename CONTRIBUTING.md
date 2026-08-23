@@ -12,6 +12,9 @@ in for real devices, so it runs identically on a laptop and in CI. If a change n
 new fixture, capture it from a real run (`raw.stdout` in any record) rather than typing
 one from memory.
 
+If you change or add a documented example in `docs/API.md`, `tests/test_docs_examples.py`
+executes it. An example that no longer runs fails the suite rather than the reader.
+
 ## Adding a backend
 
 A backend is three methods (`discover`, `build_task`, `parse`) against the contract in

@@ -27,6 +27,37 @@ reproduces that paper's published roofline fits exactly (Pi 5: 10.7 GB/s effecti
 R^2 = 0.980; i7-12700H: 35.7 GB/s, R^2 = 0.980). Two campaigns run natively by this
 framework then re-measured the same quantities independently and agreed within 1.6%.
 
+## Statement of need
+
+Comparing inference performance across machines is mostly a bookkeeping problem, and
+most of the tooling solves the wrong half of it. `llama-bench` and `onnxruntime_perf_test`
+each measure one backend well and report a table with no hardware, no thermal state and
+no power in it. MLPerf Inference specifies a rigorous closed-division protocol, but its
+submission machinery assumes a datacenter and a submitter, not a Raspberry Pi on a desk.
+Neither will tell you six weeks later whether a number was taken on a throttling board,
+which compiler produced the binary, or how much of the DRAM ceiling that run reached.
+
+Edge inference is where that gap hurts most, because the answers move with conditions the
+usual tools do not record. The same model on the same board decodes differently hot and
+cold, at two threads and at four, with the page cache warm and cold, and on the same
+silicon under a different quantization format. A result without that context is not
+reproducible, and reviewers cannot check it.
+
+`ml-systems-lab` closes the gap by making the context part of the measurement. One YAML
+file describes machines, models and a sweep; one command executes it across a mixed fleet
+over SSH; and every point comes back as a single self-describing JSON record carrying the
+hardware, OS, kernel, backend build commit, model, quantization, the metrics, and the
+physical state of the machine while they were taken: per-rail power, temperature, clocks,
+throttle flags, memory pressure. Runs are addressed by a deterministic hash of their
+specification, so an interrupted campaign resumes and a corrected point re-executes
+exactly. Failures are records too, with their raw output kept, so a parser bug is fixed
+by reparsing rather than by repeating an overnight campaign.
+
+It was written because five research campaigns had each grown their own copy of the same
+harness and the copies had drifted. The framework that replaced them reproduces those
+papers' published fits from their own data, and the datasets it has produced since ship
+in `results/` for anyone who wants to check a claim without owning the hardware.
+
 ![roofline](results/combined-report/fig_roofline.png)
 
 *Every point is a different model or quantization; every line is one device's effective
@@ -85,14 +116,30 @@ config.yaml ──> RunSpecs ──> Device ──> agent (on the device) ──
 
 ## Install
 
+Python 3.9 or newer, on Linux, macOS or Windows.
+
 ```
-pip install -e ".[dev]"        # numpy, matplotlib, PyYAML; pytest for the test suite
-pip install -e ".[onnx]"       # optional: onnxruntime for the ORT backend on this host
+pip install ml-systems-lab                 # the released version
+pip install ml-systems-lab[onnx]           # plus onnxruntime, for the ORT backend here
 ```
 
-The measurement core (agent, devices, backends, config, schema) is standard library
-only, verified by a dedicated no-dependencies CI job. Devices under test need Python 3.9+
-and their inference backend (a llama.cpp build and/or onnxruntime), nothing else.
+From a checkout, which is what you want if you intend to change anything:
+
+```
+git clone https://github.com/manunicholasjacob/ml-systems-lab
+cd ml-systems-lab
+pip install -e ".[dev]"                    # adds pytest
+python -m pytest -q                        # 74 tests, no hardware needed, about 15 seconds
+```
+
+Dependencies are numpy, matplotlib and PyYAML, all pulled in automatically. The
+measurement core (agent, devices, backends, config, schema) is standard library only,
+which a dedicated no-dependencies CI job enforces. Devices under test need Python 3.9+
+and their inference backend (a llama.cpp build, onnxruntime, or both) and nothing else
+installed: the agent is copied to them as source and run in place.
+
+Nothing here builds llama.cpp or onnxruntime for you. Point the config at a build you
+already have, and `mlsys doctor` will tell you what it cannot find.
 
 ## Quick start
 
@@ -105,7 +152,14 @@ mlsys run configs/example-smoke.yaml               # run the experiment
 mlsys report runs/smoke-test                       # see the results
 ```
 
-For a multi-device setup, describe your machines and models once:
+If you have no hardware set up yet, the shipped datasets exercise the same path:
+
+```
+mlsys report results/pi5-campaign          # 43 points from a Raspberry Pi 5
+mlsys report results/combined-report --full # tables and figures across both machines
+```
+
+For a multi-device setup, start by describing your machines and models once:
 
 ```yaml
 # configs/lab.yaml
@@ -141,20 +195,20 @@ matrix:
     output_tokens: [64]
 ```
 
-2. Check the machines are reachable and see what they can measure:
+Then check the machines are reachable and see what each can measure:
 
 ```
 mlsys probe --config configs/lab.yaml
 ```
 
-3. Preview, then run:
+Preview the matrix, then run it:
 
 ```
 mlsys run configs/lab.yaml --dry-run
 mlsys run configs/lab.yaml
 ```
 
-4. Tables and figures:
+Turn the records into tables and figures:
 
 ```
 mlsys report runs/my-sweep                 # tables to the terminal
@@ -162,7 +216,7 @@ mlsys report runs/my-sweep --format latex  # booktabs, ready to paste
 mlsys report runs/my-sweep --full          # REPORT.md + PNG/PDF figures
 ```
 
-5. More tools:
+The rest of the commands:
 
 ```
 mlsys doctor --config configs/lab.yaml
@@ -208,8 +262,51 @@ src/mlsyslab/
 configs/             experiment definitions
 tools/               result backfill converters
 results/paper12/     real measurements from the IEEE TC submission
-tests/               70 hardware-free tests (recorded fixtures)
+tests/               74 hardware-free tests (recorded fixtures)
 ```
+
+## Documentation
+
+* [docs/API.md](docs/API.md) for using the package from Python rather than the command
+  line: the record schema, the device and backend contracts, and the analysis entry
+  points, with the stability of each one stated.
+* [docs/METHOD.md](docs/METHOD.md) for the measurement rules and why each exists.
+* [docs/memo-decode-cliff.md](docs/memo-decode-cliff.md) for a worked study built with
+  the framework, from config to conclusion.
+* `mlsys <command> --help` for the command line, and `results/README.md` for what is in
+  each shipped dataset and how it was collected.
+
+## Tests
+
+```
+pip install -e ".[dev]"
+python -m pytest -q
+```
+
+Seventy-four tests, no hardware required. Recorded `llama-bench` output and canned agent
+results stand in for devices, so the suite runs the same on a laptop and in CI, where it
+runs on Linux, macOS and Windows against Python 3.9, 3.12 and 3.13, plus a job that
+installs without numpy, matplotlib or PyYAML and checks the measurement core still
+imports and runs.
+
+## Getting help, and contributing
+
+* Something is broken, or a number looks wrong: open an issue at
+  [github.com/manunicholasjacob/ml-systems-lab/issues](https://github.com/manunicholasjacob/ml-systems-lab/issues).
+  The bug report template asks for the record JSON, which usually contains the answer,
+  because it carries the machine state at the time of the run.
+* A question rather than a bug: open an issue anyway and label it a question. There is
+  no separate forum, and a single maintainer answers both.
+* You measured something on hardware not in the table above: the results-gallery issue
+  template exists for exactly that, and those records are the most useful contribution
+  the project can receive.
+* Code changes: [CONTRIBUTING.md](CONTRIBUTING.md) covers running the tests, the contract
+  a new backend or device kind has to meet, and what a change to the measurement path
+  must respect.
+* Everyone taking part is expected to follow the
+  [Code of Conduct](CODE_OF_CONDUCT.md).
+
+Response time is a single maintainer's, so days rather than hours.
 
 ## Citing
 
