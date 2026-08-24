@@ -10,9 +10,11 @@ Two sources are supported, and they are not equivalent:
   It is nearly free to sample and gives package energy directly, but it is Linux only and
   says nothing about DRAM on most consumer parts.
 
-* **NVIDIA GPU**, either through NVML's monotonic millijoule counter, which is the RAPL
-  shape, or through nvidia-smi for instantaneous watts, which is the PMIC shape. The
-  counter is the one to prefer where the part implements it.
+* **NVIDIA GPU**, through one of three instruments depending on what the part supports:
+  NVML's monotonic millijoule counter (the RAPL shape, Volta and newer), integrated NVML
+  power samples, or integrated nvidia-smi samples (the PMIC shape, one process spawn
+  per reading). Which one produced a number is recorded with it, because they are not
+  interchangeable.
 
 Windows exposes neither CPU source without a kernel driver, so it reports None for those.
 An absent number is better than an invented one.
@@ -24,7 +26,7 @@ import glob
 import os
 import subprocess
 import time
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 _PMIC = "/usr/bin/vcgencmd"
 _RAPL_GLOB = "/sys/class/powercap/intel-rapl:*/energy_uj"
@@ -235,17 +237,166 @@ def read_gpu_power_w(index: int = 0) -> Optional[float]:
 
 
 def gpu_energy_source(index: int = 0) -> Optional[str]:
-    """Which of the two GPU paths this machine can use, if either.
+    """Which instrument this device can actually give energy from, if any.
 
-    Named rather than inferred at the call site, because a record that says its energy
-    came from a counter and one that says it came from integrated samples are different
-    measurements and should not be compared as if they were the same.
+    Named rather than inferred at the call site, because a monotonic counter and a
+    trapezoid of samples are different measurements and should not be compared as if they
+    were the same. See ENERGY_SOURCES below for why there are three rungs rather than two.
     """
     if read_nvml_energy_mj(index) is not None:
         return "nvml_energy_counter"
+    if read_nvml_power_w(index) is not None:
+        return "nvml_integrated_samples"
     if read_gpu_power_w(index) is not None:
         return "nvidia_smi_instantaneous"
     return None
+
+
+# The instrument ladder, and why it has three rungs rather than two.
+#
+# Round one measured NVML on an RTX 3050 Laptop and concluded: prefer the counter, distrust
+# the sampler. Sampling at 20 Hz raised the card's own energy counter from 0.233 W unpolled
+# to 4.297 W, 18 times higher, and each power read blocked for 53 to 425 ms.
+#
+# The same probe on a Tesla P100 says the opposite about the sampler and removes the
+# counter. Calls cost 3 ms and are flat with rate; the sampled mean moves 0.1 W across a
+# twentyfold change in sampling rate. And `nvmlDeviceGetTotalEnergyConsumption` raises
+# NVMLError_NotSupported, because NVIDIA scopes that counter to Volta and newer and the
+# P100 is Pascal.
+#
+# So neither single-device conclusion was the rule. The rule is that the right primitive
+# depends on the part and you have to ask it:
+#
+#   consumer laptop GPU   counter exists, sampler lies      -> counter
+#   Pascal datacenter     counter absent, sampler is cheap  -> integrate samples
+#   Volta and newer       both exist                        -> counter, and cross-check
+#
+# Every energy figure records which rung produced it. Two devices' numbers are otherwise
+# silently incomparable, which is the failure the framework's absent-never-zero rule exists
+# to prevent.
+#
+# Evidence: leverage/gpu-access/nvml_rate_sweep_rtx3050.json,
+# nvml_unpolled_baseline_rtx3050.json, and the Kaggle P100 run in NVML_CROSSCHECK.md.
+
+ENERGY_SOURCES = (
+    "nvml_energy_counter",        # monotonic mJ, Volta and newer
+    "nvml_integrated_samples",    # trapezoid of nvmlDeviceGetPowerUsage, ~3 ms per read
+    "nvidia_smi_instantaneous",   # trapezoid of nvidia-smi, one process spawn per sample
+)
+
+
+def read_nvml_power_w(index: int = 0) -> Optional[float]:
+    """Instantaneous GPU power through NVML, in watts.
+
+    Two orders of magnitude cheaper than spawning nvidia-smi, which is what makes
+    integrating samples viable on a part with no energy counter.
+    """
+    nvml = _nvml()
+    if nvml is None:
+        return None
+    try:
+        nvml.nvmlInit()
+    except Exception:
+        return None
+    try:
+        handle = nvml.nvmlDeviceGetHandleByIndex(index)
+        return nvml.nvmlDeviceGetPowerUsage(handle) / 1000.0
+    except Exception:
+        return None
+    finally:
+        try:
+            nvml.nvmlShutdown()
+        except Exception:
+            pass
+
+
+def gpu_capabilities(index: int = 0) -> Dict[str, Any]:
+    """What this particular GPU will answer, measured rather than assumed.
+
+    Every getter is called individually and an unsupported one reports absent instead of
+    raising. Prong 5 lost a Kaggle pre-flight cell to a single unguarded call taking the
+    whole notebook down with it.
+    """
+    caps: Dict[str, Any] = {
+        "nvml_installed": _nvml() is not None,
+        "energy_counter": read_nvml_energy_mj(index) is not None,
+        "nvml_power": read_nvml_power_w(index) is not None,
+        "nvidia_smi_power": read_gpu_power_w(index) is not None,
+    }
+    caps["energy_source"] = gpu_energy_source(index)
+    caps["can_measure_energy"] = caps["energy_source"] is not None
+    return caps
+
+
+def sample_gpu_power(seconds: float, hz: float = 10.0,
+                     index: int = 0) -> Optional[List[Tuple[float, float]]]:
+    """(timestamp, watts) pairs from the cheapest instantaneous source available.
+
+    For a part with no energy counter this is the measurement, so it uses NVML when it is
+    there and falls back to nvidia-smi only when it is not. On a consumer card the act of
+    sampling moves the number; on a datacenter card it does not. The caller decides whether
+    that matters by reading which source :func:`gpu_energy_source` named.
+    """
+    # Resolve the reader once. On a part where sampling perturbs the device, every extra
+    # read is a measurement of the measurement.
+    source = gpu_energy_source(index)
+    if source == "nvidia_smi_instantaneous":
+        reader = read_gpu_power_w
+    elif source in ("nvml_integrated_samples", "nvml_energy_counter"):
+        reader = read_nvml_power_w
+    else:
+        return None
+    out: List[Tuple[float, float]] = []
+    interval = 1.0 / hz if hz > 0 else 0.1
+    start = time.perf_counter()
+    deadline = start + seconds
+    while time.perf_counter() < deadline:
+        watts = reader(index)
+        if watts is not None:
+            out.append((time.perf_counter() - start, watts))
+        time.sleep(interval)
+    return out or None
+
+
+def gpu_energy_j(seconds: float, hz: float = 10.0,
+                 index: int = 0) -> Optional[Dict[str, Any]]:
+    """Energy over a window, by whichever instrument this device actually has.
+
+    Returns the joules, the source that produced them, and on a part that has both, the
+    ratio between them. That cross-check costs a minute and is worth it: on the RTX 3050
+    the integral overstated the counter by 24 to 41 percent.
+    """
+    before = read_nvml_energy_mj(index)
+    samples = sample_gpu_power(seconds, hz, index)
+    after = read_nvml_energy_mj(index)
+
+    out: Dict[str, Any] = {"window_s": seconds, "sample_hz": hz,
+                           "n_samples": len(samples) if samples else 0}
+    integrated = integrate_energy(samples) if samples else None
+    if integrated is not None:
+        out["energy_j_integrated"] = round(integrated, 4)
+    if before is not None and after is not None:
+        out["energy_j_counter"] = round(nvml_delta_j(before, after), 4)
+
+    if "energy_j_counter" in out:
+        out["energy_j"] = out["energy_j_counter"]
+        out["energy_source"] = "nvml_energy_counter"
+        if integrated:
+            out["counter_over_integrated"] = round(out["energy_j_counter"] / integrated, 4)
+    elif integrated is not None:
+        out["energy_j"] = out["energy_j_integrated"]
+        source = gpu_energy_source(index)
+        out["energy_source"] = source
+        out["note"] = (
+            "no energy counter available, so energy is the trapezoid of instantaneous "
+            + ("NVML samples. NVIDIA scopes the counter to Volta and newer, so a Pascal "
+               "part such as a P100 lands here."
+               if source == "nvml_integrated_samples" else
+               "nvidia-smi samples. NVML is not installed, so whether this part has an "
+               "energy counter is unknown; pip install nvidia-ml-py to find out."))
+    else:
+        return None
+    return out
 
 
 # ------------------------------------------------------------------- integration

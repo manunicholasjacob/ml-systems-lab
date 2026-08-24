@@ -131,15 +131,37 @@ the reason a name is not enough: a rented card can arrive power-capped or with E
 both move the result. Anything the part refuses is recorded absent, which on a consumer
 card is the power-management limit and the ECC state.
 
-**Energy.** Two paths, and they are the same two shapes the CPU already had. NVML's
-`nvmlDeviceGetTotalEnergyConsumption` is a monotonic millijoule counter, which is the RAPL
-shape: energy comes out directly and the read is nearly free. `nvidia-smi` gives
-instantaneous watts at the cost of a process spawn, which is the PMIC shape and carries the
-PMIC warning. Prefer the counter. On an RTX 3050 the integral of the samples read 24 to 41
-percent higher than the counter across rates from 0.5 to 20 Hz, and mean sampled power rose
-from 3.4 to 6.7 W as the rate rose while the counter said 2.3 to 4.4 W over the same
-windows, so the act of sampling was waking the device. Every record names which instrument
-produced its energy, because an integral and a counter are not the same measurement.
+**Energy.** Three instruments, and which one is right depends on the part, which took two
+very different GPUs to work out.
+
+On an **RTX 3050 Laptop**, NVML's `nvmlDeviceGetTotalEnergyConsumption` exists and the
+sampler lies. Sampling at 20 Hz raised the card's own counter from 0.233 W unpolled to
+4.297 W, eighteen times higher, and each power read blocked for 53 to 425 ms. The integral
+of the samples overstated even that perturbed figure by 24 to 41 percent.
+
+On a **Tesla P100**, the opposite on both counts. Power reads cost 3 ms and are flat with
+rate: the sampled mean moves 0.1 W across a twentyfold change in sampling rate. And the
+energy counter is not there at all, because NVIDIA scopes it to Volta and newer and the
+P100 is Pascal.
+
+Neither single-device conclusion was the rule. The rule is:
+
+| part | counter | sampler | use |
+|---|---|---|---|
+| consumer laptop GPU | present | perturbs the device | the counter |
+| Pascal datacenter | absent | cheap and flat | integrated samples |
+| Volta and newer | present | expected cheap | the counter, and cross-check |
+
+So the ladder has three rungs, `nvml_energy_counter`, `nvml_integrated_samples` and
+`nvidia_smi_instantaneous`, and every record names the one that produced its number.
+Without that, two devices' energy figures are silently incomparable, which is the failure
+the absent-never-zero rule exists to prevent. `gpu_energy_j` returns the ratio between the
+two on a part that has both, because that cross-check costs a minute and has already been
+worth it once.
+
+Every NVML getter is called individually and reports absent rather than raising. That is not
+defensive style for its own sake: one unguarded call took down a whole Kaggle pre-flight
+cell and lost the rest of the run.
 
 **Ceiling.** `membw.measure_device` measures achievable device-memory read bandwidth with
 the same rules as the host path: read-only kernels, copy measured and excluded, best of N,

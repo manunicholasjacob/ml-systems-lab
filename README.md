@@ -76,7 +76,7 @@ by one number per device.*
 | Memory | peak RSS, plus free-memory and swap state around every run |
 | CPU utilization | `/proc/stat` deltas (Linux), `GetSystemTimes` (Windows), per-core where available |
 | Temperature and throttling | sysfs thermal zones, Pi throttle bitmask, in the record not a side file |
-| Power and energy | Raspberry Pi PMIC per-rail (core vs DRAM split), Intel RAPL where present, NVIDIA GPUs through NVML's energy counter or `nvidia-smi` |
+| Power and energy | Raspberry Pi PMIC per-rail (core vs DRAM split), Intel RAPL where present, NVIDIA GPUs through whichever of three instruments the part supports, named in the record |
 | Derived | decode bandwidth, roofline utilization %, energy per token |
 
 Anything a platform cannot measure is reported as absent, never as zero.
@@ -129,7 +129,7 @@ From a checkout, which is what you want if you intend to change anything:
 git clone https://github.com/manunicholasjacob/ml-systems-lab
 cd ml-systems-lab
 pip install -e ".[dev]"                    # adds pytest
-python -m pytest -q                        # 101 tests, no hardware needed, about 20 seconds
+python -m pytest -q                        # 108 tests, no hardware needed, about 20 seconds
 ```
 
 Dependencies are numpy, matplotlib and PyYAML, all pulled in automatically. The
@@ -262,7 +262,7 @@ src/mlsyslab/
 configs/             experiment definitions
 tools/               result backfill converters
 results/paper12/     real measurements from the IEEE TC submission
-tests/               101 hardware-free tests (recorded fixtures)
+tests/               108 hardware-free tests (recorded fixtures)
 ```
 
 ## Documentation
@@ -283,7 +283,7 @@ pip install -e ".[dev]"
 python -m pytest -q
 ```
 
-A hundred and one tests, no hardware required. Recorded `llama-bench` output and canned agent
+A hundred and eight tests, no hardware required. Recorded `llama-bench` output and canned agent
 results stand in for devices, so the suite runs the same on a laptop and in CI, where it
 runs on Linux, macOS and Windows against Python 3.9, 3.12 and 3.13, plus a job that
 installs without numpy, matplotlib or PyYAML and checks the measurement core still

@@ -231,3 +231,86 @@ def test_an_old_record_without_gpu_fields_still_loads():
     assert back.device.gpus == []
     assert back.telemetry.gpu_energy_j is None
     assert back.telemetry.power_w_mean == 5.0
+
+
+# -------------------------------------------------- the instrument ladder, three rungs
+
+def test_a_pascal_part_falls_through_to_integrated_nvml_samples(monkeypatch):
+    # The case prong 5 actually hit on a Tesla P100: nvmlDeviceGetTotalEnergyConsumption
+    # raises NotSupported because NVIDIA scopes it to Volta and newer, while
+    # nvmlDeviceGetPowerUsage answers in about 3 ms. That part must still be able to
+    # report energy, and must not report it as if a counter produced it.
+    monkeypatch.setattr(power, "read_nvml_energy_mj", lambda index=0: None)
+    monkeypatch.setattr(power, "read_nvml_power_w", lambda index=0: 26.8)
+    monkeypatch.setattr(power, "read_gpu_power_w", lambda index=0: 26.8)
+    assert power.gpu_energy_source() == "nvml_integrated_samples"
+
+    caps = power.gpu_capabilities()
+    assert caps["energy_counter"] is False
+    assert caps["can_measure_energy"] is True
+
+
+def test_a_volta_or_newer_part_uses_the_counter_and_cross_checks_it(monkeypatch):
+    energies = iter([1_000_000, 1_010_000])  # 10 J across the window
+    monkeypatch.setattr(power, "read_nvml_energy_mj", lambda index=0: next(energies))
+    monkeypatch.setattr(power, "read_nvml_power_w", lambda index=0: 20.0)
+    monkeypatch.setattr(power, "sample_gpu_power",
+                        lambda seconds, hz=10.0, index=0: [(0.0, 20.0), (1.0, 20.0)])
+    out = power.gpu_energy_j(1.0, hz=2)
+    assert out["energy_source"] == "nvml_energy_counter"
+    assert out["energy_j"] == 10.0
+    # 10 J counted against 20 J integrated: the ratio is the whole point of measuring both.
+    assert out["counter_over_integrated"] == 0.5
+
+
+def test_no_nvml_at_all_still_measures_through_nvidia_smi(monkeypatch):
+    monkeypatch.setattr(power, "_nvml", lambda: None)
+    monkeypatch.setattr(power, "read_gpu_power_w", lambda index=0: 8.1)
+    assert power.gpu_energy_source() == "nvidia_smi_instantaneous"
+    caps = power.gpu_capabilities()
+    assert caps["nvml_installed"] is False
+    assert caps["can_measure_energy"] is True
+
+
+def test_a_device_with_no_instrument_reports_nothing_rather_than_zero(monkeypatch):
+    monkeypatch.setattr(power, "read_nvml_energy_mj", lambda index=0: None)
+    monkeypatch.setattr(power, "read_nvml_power_w", lambda index=0: None)
+    monkeypatch.setattr(power, "read_gpu_power_w", lambda index=0: None)
+    assert power.gpu_energy_source() is None
+    assert power.sample_gpu_power(0.1) is None
+    assert power.gpu_energy_j(0.1) is None
+    assert power.gpu_capabilities()["can_measure_energy"] is False
+
+
+def test_the_note_distinguishes_an_absent_counter_from_an_absent_library(monkeypatch):
+    monkeypatch.setattr(power, "read_nvml_energy_mj", lambda index=0: None)
+    monkeypatch.setattr(power, "read_nvml_power_w", lambda index=0: 26.8)
+    monkeypatch.setattr(power, "sample_gpu_power",
+                        lambda seconds, hz=10.0, index=0: [(0.0, 26.8), (1.0, 26.8)])
+    pascal = power.gpu_energy_j(1.0)
+    assert "Volta and newer" in pascal["note"]
+
+    monkeypatch.setattr(power, "read_nvml_power_w", lambda index=0: None)
+    monkeypatch.setattr(power, "read_gpu_power_w", lambda index=0: 8.1)
+    unknown = power.gpu_energy_j(1.0)
+    assert "NVML is not installed" in unknown["note"]
+
+
+def test_every_source_the_ladder_can_return_is_declared():
+    # A record's energy_source has to be one of a known set, or an analysis cannot group
+    # by instrument, which is the whole reason it is recorded.
+    assert power.ENERGY_SOURCES == ("nvml_energy_counter", "nvml_integrated_samples",
+                                    "nvidia_smi_instantaneous")
+
+
+def test_capabilities_never_raises_on_an_unsupported_getter(monkeypatch):
+    # Prong 5 lost a Kaggle pre-flight cell to one unguarded NVML call. Every getter here
+    # has to survive a device that refuses it.
+    class Exploding:
+        def __getattr__(self, name):
+            raise RuntimeError("this device refuses everything")
+
+    monkeypatch.setattr(power, "_nvml", lambda: Exploding())
+    caps = power.gpu_capabilities()
+    assert caps["energy_counter"] is False
+    assert caps["nvml_power"] is False
