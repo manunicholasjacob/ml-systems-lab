@@ -30,8 +30,8 @@ abstract: >-
   are records with their raw output preserved rather than exceptions. The analysis layer
   turns a directory of records into publication-quality tables and figures.
 license: MIT
-version: 0.1.1
-date-released: "2026-08-13"
+version: 0.1.2
+date-released: "2026-08-24"
 keywords:
   - benchmarking
   - inference
