@@ -149,13 +149,24 @@ def test_torch_without_cuda_is_distinguished_from_torch_missing(monkeypatch):
         def is_available():
             return False
 
+        @staticmethod
+        def device_count():
+            return 0
+
+    class FakeVersion:
+        cuda = "12.4"
+
     class FakeTorch:
+        __version__ = "2.9.0+cu124"
+        version = FakeVersion()
         cuda = FakeCuda()
 
     monkeypatch.setattr(membw, "_torch", lambda: FakeTorch())
     with pytest.raises(membw.AcceleratorUnavailable) as caught:
         membw.measure_device()
-    assert "no CUDA device" in str(caught.value)
+    message = str(caught.value)
+    assert "no accelerator attached" in message
+    assert "torch is not installed" not in message
 
 
 def test_the_working_set_leaves_the_card_usable():
@@ -314,3 +325,92 @@ def test_capabilities_never_raises_on_an_unsupported_getter(monkeypatch):
     caps = power.gpu_capabilities()
     assert caps["energy_counter"] is False
     assert caps["nvml_power"] is False
+
+
+# ------------------------------------------- the device path has to diagnose itself
+
+def test_a_successful_device_measurement_reports_status_ok():
+    # The host path has set this since day one and the device path did not, so a
+    # successful --device run exited non-zero and wrote a record that a caller checking
+    # status read as a failure. That is the likeliest reason the first Kaggle attempt
+    # came back with nothing usable.
+    import inspect as _inspect
+    source = _inspect.getsource(membw.measure_device)
+    assert '"status": "ok"' in source
+
+
+def test_a_cpu_only_torch_is_named_as_such(monkeypatch):
+    class Version:
+        cuda = None
+
+    class Cuda:
+        @staticmethod
+        def is_available():
+            return False
+
+        @staticmethod
+        def device_count():
+            return 0
+
+    class FakeTorch:
+        __version__ = "2.9.0+cpu"
+        version = Version()
+        cuda = Cuda()
+
+    message = membw.describe_no_cuda(FakeTorch())
+    assert "CPU-only build" in message
+    assert "pull a CPU wheel over the top" in message
+
+    monkeypatch.setattr(membw, "_torch", lambda: FakeTorch())
+    with pytest.raises(membw.AcceleratorUnavailable) as caught:
+        membw.measure_device()
+    assert "CPU-only build" in str(caught.value)
+
+
+def test_a_cuda_torch_with_no_attached_gpu_is_named_differently(monkeypatch):
+    class Version:
+        cuda = "12.4"
+
+    class Cuda:
+        @staticmethod
+        def is_available():
+            return False
+
+        @staticmethod
+        def device_count():
+            return 0
+
+    class FakeTorch:
+        __version__ = "2.9.0+cu124"
+        version = Version()
+        cuda = Cuda()
+
+    message = membw.describe_no_cuda(FakeTorch())
+    assert "no accelerator attached" in message
+    assert "CPU-only" not in message
+    # The two causes have different fixes, so they must not read the same.
+    assert "Kaggle or Colab" in message
+
+
+def test_device_context_travels_with_a_failure(monkeypatch):
+    monkeypatch.setattr(membw, "_torch", lambda: None)
+    ctx = membw.device_context()
+    assert ctx == {"torch_installed": False}
+
+
+def test_device_context_survives_a_torch_that_raises(monkeypatch):
+    class Exploding:
+        __version__ = "x"
+
+        class version:
+            cuda = "12.4"
+
+        class cuda:
+            @staticmethod
+            def is_available():
+                raise RuntimeError("driver mismatch")
+
+    monkeypatch.setattr(membw, "_torch", lambda: Exploding())
+    ctx = membw.device_context()
+    assert ctx["cuda_available"] is False
+    assert "driver mismatch" in ctx["probe_error"]

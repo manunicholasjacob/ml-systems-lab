@@ -170,7 +170,18 @@ around an asynchronous launch, which would measure the launch. It reaches the de
 through torch, lazily, and reports the ceiling absent rather than falling back to a
 datasheet number, because a wrong denominator is how a roofline lies quietly.
 
-**What is unrun.** The CUDA kernels in `measure_device` have not executed on a real card.
+**What is unrun, and what went wrong on the first attempt.** The CUDA kernels in
+`measure_device` have not executed on a real card. The first Kaggle attempt, on a P100,
+produced nothing usable, and the reason turned out to be two defects rather than the
+kernels: the success path did not set `status: "ok"` the way the host path does, so a good
+run exited non-zero and wrote a record a caller read as a failure; and
+`torch.cuda.is_available()` returning false was reported as "no CUDA device", which is true
+and useless. It now says which of the two causes it is, because they have different fixes:
+a session with no accelerator attached, or a CPU-only torch build, which is the one that
+wastes an afternoon because pip will replace a CUDA build with a CPU wheel while installing
+something else and say nothing. A failed `--device` run now carries a `context` block with
+the torch version, its CUDA build and the device count, so a one-shot notebook cell
+diagnoses itself.
 Everything around them is tested off recorded `nvidia-smi` output and stubbed imports, in
 the usual hardware-free way, and the identity and instantaneous-power paths were checked
 against an RTX 3050. The first datacenter session should start by running

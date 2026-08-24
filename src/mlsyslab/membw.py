@@ -197,6 +197,31 @@ def _torch():
     return torch
 
 
+def describe_no_cuda(torch) -> str:
+    """Say which of the two reasons torch cannot see a GPU, because they differ.
+
+    Either the session has no accelerator attached, or torch itself is a CPU-only build.
+    The second is the one that wastes an afternoon: pip will happily replace a CUDA build
+    with a CPU wheel while installing something else, and nothing says so.
+    """
+    built_for_cuda = getattr(getattr(torch, "version", None), "cuda", None)
+    try:
+        count = torch.cuda.device_count()
+    except Exception:
+        count = 0
+    if not built_for_cuda:
+        return (f"torch {getattr(torch, '__version__', '?')} is a CPU-only build, so it "
+                f"cannot see a GPU whatever is attached. torch.version.cuda is None. "
+                f"Reinstall a CUDA build, and check afterwards that it survived: on a "
+                f"hosted notebook, installing another package can pull a CPU wheel over "
+                f"the top of it.")
+    return (f"torch {getattr(torch, '__version__', '?')} is built for CUDA "
+            f"{built_for_cuda} and reports {count} devices, so the runtime has no "
+            f"accelerator attached. On Kaggle or Colab, pick a GPU accelerator for the "
+            f"session and run this again. nvidia-smi in a shell cell is the quickest "
+            f"check.")
+
+
 def device_available() -> bool:
     torch = _torch()
     return bool(torch and torch.cuda.is_available())
@@ -229,7 +254,7 @@ def measure_device(working_set_mb: Optional[int] = None, reps: int = 7,
             "Install it, or declare dram_peak_GBs in the device config and say where the "
             "number came from.")
     if not torch.cuda.is_available():
-        raise AcceleratorUnavailable("torch is installed but reports no CUDA device")
+        raise AcceleratorUnavailable(describe_no_cuda(torch))
 
     torch.cuda.set_device(index)
     nbytes = _device_working_set_bytes(torch, working_set_mb)
@@ -280,6 +305,7 @@ def measure_device(working_set_mb: Optional[int] = None, reps: int = 7,
 
     props = torch.cuda.get_device_properties(index)
     out: Dict[str, Any] = {
+        "status": "ok",
         "peak_read_GBs": round(peak, 3),
         "best_kernel": peak_kernel,
         "copy_GBs": round(best["copy"], 3),
@@ -307,6 +333,23 @@ def measure_device(working_set_mb: Optional[int] = None, reps: int = 7,
     return out
 
 
+def device_context() -> Dict[str, Any]:
+    """What the machine says about its accelerator, for a record that has to travel."""
+    torch = _torch()
+    ctx: Dict[str, Any] = {"torch_installed": torch is not None}
+    if torch is None:
+        return ctx
+    ctx["torch_version"] = getattr(torch, "__version__", None)
+    ctx["torch_cuda_build"] = getattr(getattr(torch, "version", None), "cuda", None)
+    try:
+        ctx["cuda_available"] = bool(torch.cuda.is_available())
+        ctx["device_count"] = int(torch.cuda.device_count())
+    except Exception as exc:
+        ctx["cuda_available"] = False
+        ctx["probe_error"] = f"{type(exc).__name__}: {exc}"
+    return ctx
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(prog="mlsyslab.membw")
     parser.add_argument("--mb", type=int, help="working set in MB")
@@ -325,6 +368,10 @@ def main(argv: Optional[List[str]] = None) -> int:
             result = measure(working_set_mb=args.mb, reps=args.reps)
     except Exception as exc:
         result = {"status": "failed", "error": f"{type(exc).__name__}: {exc}"}
+        if args.device:
+            # A one-shot notebook cell has to diagnose itself. Without this the record is
+            # an error string with no way to tell an unattached GPU from a CPU-only wheel.
+            result["context"] = device_context()
 
     if args.json:
         print(json.dumps(result, indent=2))
