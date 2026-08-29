@@ -19,7 +19,12 @@
     "Raspberry Pi",
     "roofline model",
     "energy measurement",
-    "reproducibility"
+    "reproducibility",
+    "kubernetes",
+    "containers",
+    "distributed systems",
+    "observability",
+    "prometheus"
   ],
   "related_identifiers": [
     {

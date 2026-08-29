@@ -19,7 +19,8 @@ identifiers:
 abstract: >-
   A benchmarking framework for ML inference across heterogeneous hardware. One
   configuration file and one command execute an experiment matrix across any mix of
-  machines, over SSH or locally, and every measurement returns as a single
+  machines, locally, over SSH, or in a Kubernetes pod, concurrently and with partial
+  failure handled, and every measurement returns as a single
   self-describing JSON record carrying the hardware, OS, kernel, compiler, backend
   version and build commit, model, quantization, the metrics, and the physical state of
   the machine while they were taken: per-rail power, temperature, clocks, throttle flags
@@ -27,11 +28,14 @@ abstract: >-
   request latency percentiles, peak resident memory, and derives decode bandwidth and
   roofline utilization. Run identifiers are deterministic over the specification, so an
   interrupted campaign resumes and a corrected point re-executes exactly, and failures
-  are records with their raw output preserved rather than exceptions. The analysis layer
-  turns a directory of records into publication-quality tables and figures.
+  are records with their raw output preserved rather than exceptions. A record taken in a
+  container carries the cgroup ceilings that applied to it, read from inside the
+  container, because a run under a CPU quota is not comparable to one without. The
+  analysis layer turns a directory of records into publication-quality tables and
+  figures.
 license: MIT
-version: 0.1.2
-date-released: "2026-08-24"
+version: 0.2.0
+date-released: "2026-08-28"
 keywords:
   - benchmarking
   - inference
@@ -42,6 +46,10 @@ keywords:
   - roofline
   - energy
   - reproducibility
+  - kubernetes
+  - containers
+  - distributed-systems
+  - observability
 references:
   - type: software
     title: "llama.cpp"
