@@ -1,0 +1,6 @@
+{"run_id": "ffaaf4bffd20", "device": "laptop", "backend": "llamacpp", "model": "qwen0.5b-q4km", "mode": "throughput", "status": "ok", "path": "laptop\\ffaaf4bffd20.json"}
+{"run_id": "15b229c12a48", "device": "pi5", "backend": "llamacpp", "model": "qwen0.5b-q4km", "mode": "throughput", "status": "ok", "path": "pi5\\15b229c12a48.json"}
+{"run_id": "6083172f1dbd", "device": "laptop", "backend": "llamacpp", "model": "qwen0.5b-q2k", "mode": "throughput", "status": "ok", "path": "laptop\\6083172f1dbd.json"}
+{"run_id": "66a06f65b432", "device": "pi5", "backend": "llamacpp", "model": "qwen0.5b-q2k", "mode": "throughput", "status": "ok", "path": "pi5\\66a06f65b432.json"}
+{"run_id": "dc8a3d4d40cb", "device": "k8s-cpu4", "backend": "llamacpp", "model": "qwen0.5b-q4km", "mode": "throughput", "status": "ok", "path": "k8s-cpu4\\dc8a3d4d40cb.json"}
+{"run_id": "4993843a2d45", "device": "k8s-cpu4", "backend": "llamacpp", "model": "qwen0.5b-q2k", "mode": "throughput", "status": "ok", "path": "k8s-cpu4\\4993843a2d45.json"}

@@ -1,0 +1,66 @@
+{
+  "mode": "concurrent",
+  "requested": 6,
+  "skipped_already_done": 0,
+  "executed": 6,
+  "ok": 6,
+  "failed": 0,
+  "elapsed_s": 50.68,
+  "by_device": {
+    "laptop": {
+      "ok": 2,
+      "failed": 0
+    },
+    "pi5": {
+      "ok": 2,
+      "failed": 0
+    },
+    "k8s-cpu4": {
+      "ok": 2,
+      "failed": 0
+    }
+  },
+  "concurrency": {
+    "k8s-cpu4": 1,
+    "laptop": 1,
+    "pi5": 1
+  },
+  "resource_groups": {
+    "laptop-cpu": {
+      "limit": 1,
+      "devices": [
+        "k8s-cpu4",
+        "laptop"
+      ]
+    }
+  },
+  "retry_policy": {
+    "max_attempts": 3,
+    "backoff_s": 5.0,
+    "backoff_factor": 2.0,
+    "max_backoff_s": 120.0,
+    "retried_only": "transport failures"
+  },
+  "transport_failures": 2,
+  "breakers": {},
+  "clock_offsets": {
+    "k8s-cpu4": {
+      "status": "unreachable",
+      "error": "DeviceError: could not reach mlsyslab/mlsyslab-cpu4 to check the transport (exit 1): error: unable to upgrade connection: pod does not exist"
+    },
+    "laptop": {
+      "status": "ok",
+      "offset_s": 0.045,
+      "round_trip_s": 1.906,
+      "agent_runtime_s": 1.789,
+      "uncertainty_s": 0.061
+    },
+    "pi5": {
+      "status": "ok",
+      "offset_s": 1.846,
+      "round_trip_s": 4.374,
+      "agent_runtime_s": 0.012,
+      "uncertainty_s": 2.183
+    }
+  }
+}

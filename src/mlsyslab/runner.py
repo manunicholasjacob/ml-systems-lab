@@ -16,14 +16,35 @@ from __future__ import annotations
 import json
 import os
 import sys
+import threading
 import time
+from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional
 
 from . import backends as backend_registry
 from . import devices as device_registry
 from .backends.base import RunSpec
 from .config import Config
+from .devices.base import DeviceError
 from .schema import RunRecord, compute_run_id
+
+
+@dataclass
+class Attempt:
+    """One try at one spec, and *why* it failed if it did.
+
+    The distinction the scheduler needs, and a plain record cannot carry, is between a
+    machine that could not be reached and a measurement that came back saying no. The
+    first is worth retrying. The second is data: a model that does not fit in RAM will
+    not fit on the second attempt either, and retrying it would only bury the finding.
+    """
+
+    record: RunRecord
+    failure_kind: Optional[str] = None   # transport | config | measurement | parse
+
+    @property
+    def retryable(self) -> bool:
+        return self.failure_kind == "transport"
 
 
 class Runner:
@@ -40,22 +61,30 @@ class Runner:
         self.on_event = on_event or (lambda kind, payload: None)
         self._devices: Dict[str, Any] = {}
         self._backends: Dict[str, Any] = {}
+        # The sequential path never contends for these. The concurrent scheduler in
+        # scheduler.py drives the same Runner from several threads, where building a
+        # device twice, or interleaving two appends to index.jsonl, is a real
+        # corruption rather than a theoretical one.
+        self._wiring_lock = threading.Lock()
+        self._save_lock = threading.Lock()
 
     # --------------------------------------------------------------------- wiring
 
     def device(self, device_id: str):
-        if device_id not in self._devices:
-            self._devices[device_id] = device_registry.from_config(
-                device_id, self.config.devices.get(device_id, {})
-            )
-        return self._devices[device_id]
+        with self._wiring_lock:
+            if device_id not in self._devices:
+                self._devices[device_id] = device_registry.from_config(
+                    device_id, self.config.devices.get(device_id, {})
+                )
+            return self._devices[device_id]
 
     def backend(self, name: str, device_id: str):
         key = f"{name}@{device_id}"
-        if key not in self._backends:
-            device_config = self.config.devices.get(device_id, {})
-            self._backends[key] = backend_registry.get(name, device_config.get(name) or {})
-        return self._backends[key]
+        with self._wiring_lock:
+            if key not in self._backends:
+                device_config = self.config.devices.get(device_id, {})
+                self._backends[key] = backend_registry.get(name, device_config.get(name) or {})
+            return self._backends[key]
 
     # ---------------------------------------------------------------------- paths
 
@@ -110,23 +139,53 @@ class Runner:
         })
         return records
 
+    def run_concurrent(self, specs: Optional[List[RunSpec]] = None, **kwargs):
+        """Run the same specs across devices at once. See :mod:`mlsyslab.scheduler`.
+
+        Kept as a separate entry point rather than a flag on :meth:`run`, because the
+        sequential path is the one every published result so far was produced by and it
+        is not going to change shape to accommodate this.
+        """
+        from .scheduler import ConcurrentSweep
+
+        return ConcurrentSweep(self, **kwargs).run(specs)
+
     def run_one(self, spec: RunSpec) -> RunRecord:
         """One spec to one record. Never raises; failures become failed records."""
+        return self.attempt(spec).record
+
+    def attempt(self, spec: RunSpec) -> Attempt:
+        """run_one, plus the classification of any failure.
+
+        Split out from :meth:`run_one` rather than folded into it: the sequential path
+        wants a record and nothing else, and the scheduler needs to know whether a
+        failure was the machine's fault before it decides to try again.
+        """
         try:
             device = self.device(spec.device_id)
             backend = self.backend(spec.backend, spec.device_id)
         except Exception as exc:
-            return self._failure(spec, f"{type(exc).__name__}: {exc}")
+            kind = "transport" if isinstance(exc, DeviceError) else "config"
+            return Attempt(self._failure(spec, f"{type(exc).__name__}: {exc}"), kind)
 
         try:
             task = backend.build_task(spec, device)
         except Exception as exc:
-            return self._failure(spec, f"could not build task: {exc}")
+            # Building a task talks to the device: backends look for their binaries on
+            # it and check that the model is there. A DeviceError raised in the middle of
+            # that is the machine being unreachable, not the config being wrong, and the
+            # difference decides whether the point is retried or written off.
+            kind = "transport" if isinstance(exc, DeviceError) else "config"
+            return Attempt(self._failure(spec, f"could not build task: {exc}"), kind)
 
         try:
             result = device.execute(task)
         except Exception as exc:
-            return self._failure(spec, f"{type(exc).__name__}: {exc}")
+            # DeviceError means the transport failed: ssh dropped, the pod went away, the
+            # agent never answered. Anything else came out of our own code, and retrying
+            # it would only produce the same exception more slowly.
+            kind = "transport" if isinstance(exc, DeviceError) else "config"
+            return Attempt(self._failure(spec, f"{type(exc).__name__}: {exc}"), kind)
 
         try:
             record = backend.parse(spec, result, device)
@@ -136,7 +195,8 @@ class Runner:
             record = self._failure(spec, f"could not parse result: {exc}")
             record.raw = {"stdout": (result.get("stdout") or "")[:200000],
                           "stderr": (result.get("stderr") or "")[-8000:]}
-        return record
+            return Attempt(record, "parse")
+        return Attempt(record, None if record.ok else "measurement")
 
     def _failure(self, spec: RunSpec, message: str) -> RunRecord:
         from . import __version__
@@ -171,13 +231,16 @@ class Runner:
             fh.write(record.to_json())
         os.replace(temporary, path)
 
-        with open(os.path.join(self.output_dir, "index.jsonl"), "a", encoding="utf-8") as fh:
-            fh.write(json.dumps({
-                "run_id": record.run_id, "device": record.device.device_id,
-                "backend": record.backend.name, "model": record.workload.model,
-                "mode": spec.mode, "status": record.status,
-                "path": os.path.relpath(path, self.output_dir),
-            }) + "\n")
+        # One append per finished run, from any number of worker threads.
+        with self._save_lock:
+            with open(os.path.join(self.output_dir, "index.jsonl"), "a",
+                      encoding="utf-8") as fh:
+                fh.write(json.dumps({
+                    "run_id": record.run_id, "device": record.device.device_id,
+                    "backend": record.backend.name, "model": record.workload.model,
+                    "mode": spec.mode, "status": record.status,
+                    "path": os.path.relpath(path, self.output_dir),
+                }) + "\n")
         return path
 
     def _write_manifest(self, specs: List[RunSpec]) -> None:

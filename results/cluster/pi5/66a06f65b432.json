@@ -1,0 +1,117 @@
+{
+  "run_id": "66a06f65b432",
+  "experiment": "cluster",
+  "schema_version": "1.0",
+  "lab_version": "0.2.0",
+  "timestamp_utc": "2026-08-29T04:20:23Z",
+  "duration_s": 14.335224181995727,
+  "status": "ok",
+  "warnings": [],
+  "tags": [],
+  "device": {
+    "device_id": "pi5",
+    "kind": "ssh",
+    "os": "Linux",
+    "os_release": "6.12.93+rpt-rpi-2712",
+    "distro": "Debian GNU/Linux 12 (bookworm)",
+    "kernel": "6.12.93+rpt-rpi-2712",
+    "machine": "aarch64",
+    "cpu": "Raspberry Pi 5 Model B Rev 1.0",
+    "cpu_flags": [
+      "asimd",
+      "asimddp",
+      "asimdhp",
+      "fphp"
+    ],
+    "logical_cores": 4,
+    "physical_cores": 4,
+    "ram_bytes": 2108489728,
+    "swap_bytes": 0,
+    "dram_peak_GBs": 13.98,
+    "board_model": "Raspberry Pi 5 Model B Rev 1.0",
+    "gpus": [],
+    "python": "3.11.2",
+    "compiler": "cc (Debian 12.2.0-14) 12.2.0",
+    "libc": "glibc 2.36",
+    "capabilities": {
+      "temperature": true,
+      "throttle_flags": true,
+      "cpu_freq": true,
+      "pmic": true,
+      "rapl": false,
+      "nvml": false,
+      "nvidia_smi": false,
+      "cpu_utilisation": true,
+      "peak_rss": true,
+      "dvfs_read": true,
+      "dvfs_write": true
+    },
+    "placement": {}
+  },
+  "backend": {
+    "name": "llamacpp",
+    "version": "1",
+    "build": "d73c1d6",
+    "execution_provider": "CPU",
+    "library_versions": {}
+  },
+  "workload": {
+    "model": "qwen0.5b-q2k",
+    "model_path": "/home/manu/llm/models/qwen0.5b-q2k.gguf",
+    "weight_bytes": 332659200,
+    "params": 0.494032768,
+    "quantization": "Q2_K",
+    "architecture": "qwen2 1B Q2_K - Medium",
+    "prompt_tokens": 128,
+    "output_tokens": 64
+  },
+  "knobs": {
+    "threads": 4,
+    "repetitions": 3,
+    "extra": {}
+  },
+  "metrics": {
+    "prefill_tps": 152.074118,
+    "decode_tps": 30.872667,
+    "decode_bw_GBs": 10.2700767060864,
+    "bw_utilization_pct": 73.46263738259226,
+    "stdev_pct": 0.12036959504180718,
+    "extra": {}
+  },
+  "telemetry": {
+    "temp_c_start": 50.7,
+    "temp_c_mean": 53.178873239436626,
+    "temp_c_max": 56.75,
+    "throttled": false,
+    "throttle_flags": "0x0",
+    "cpu_util_pct_mean": 68.24265600556232,
+    "cpu_util_pct_per_core": [
+      72.1,
+      67.1,
+      66.9,
+      67.0
+    ],
+    "freq_khz_mean": 2400000.0,
+    "freq_khz_min": 2400000,
+    "freq_khz_max": 2400000,
+    "sample_hz": 10.0,
+    "sample_count": 142
+  },
+  "raw": {
+    "stdout": "[\n  {\n    \"build_commit\": \"d73c1d6\",\n    \"build_number\": 1,\n    \"cpu_info\": \"CPU\",\n    \"gpu_info\": \"\",\n    \"backends\": \"CPU\",\n    \"model_filename\": \"/home/manu/llm/models/qwen0.5b-q2k.gguf\",\n    \"model_type\": \"qwen2 1B Q2_K - Medium\",\n    \"model_size\": 332659200,\n    \"model_n_params\": 494032768,\n    \"n_batch\": 2048,\n    \"n_ubatch\": 512,\n    \"n_threads\": 4,\n    \"cpu_mask\": \"0x0\",\n    \"cpu_strict\": false,\n    \"poll\": 50,\n    \"type_k\": \"f16\",\n    \"type_v\": \"f16\",\n    \"n_gpu_layers\": -1,\n    \"n_cpu_moe\": 0,\n    \"split_mode\": \"layer\",\n    \"main_gpu\": 0,\n    \"no_kv_offload\": false,\n    \"flash_attn\": -1,\n    \"devices\": \"auto\",\n    \"tensor_split\": \"0.00\",\n    \"tensor_buft_overrides\": \"none\",\n    \"load_mode\": \"mmap\",\n    \"embeddings\": false,\n    \"no_op_offload\": 0,\n    \"no_host\": false,\n    \"fit_target\": 0,\n    \"fit_min_ctx\": 0,\n    \"n_prompt\": 128,\n    \"n_gen\": 0,\n    \"n_depth\": 0,\n    \"test_time\": \"2026-08-29T04:20:14Z\",\n    \"avg_ns\": 841695651,\n    \"stddev_ns\": 1012468,\n    \"avg_ts\": 152.074118,\n    \"stddev_ts\": 0.183051,\n    \"samples_ns\": [ 842189900, 842366067, 840530986 ],\n    \"samples_ts\": [ 151.985, 151.953, 152.285 ]\n  },\n  {\n    \"build_commit\": \"d73c1d6\",\n    \"build_number\": 1,\n    \"cpu_info\": \"CPU\",\n    \"gpu_info\": \"\",\n    \"backends\": \"CPU\",\n    \"model_filename\": \"/home/manu/llm/models/qwen0.5b-q2k.gguf\",\n    \"model_type\": \"qwen2 1B Q2_K - Medium\",\n    \"model_size\": 332659200,\n    \"model_n_params\": 494032768,\n    \"n_batch\": 2048,\n    \"n_ubatch\": 512,\n    \"n_threads\": 4,\n    \"cpu_mask\": \"0x0\",\n    \"cpu_strict\": false,\n    \"poll\": 50,\n    \"type_k\": \"f16\",\n    \"type_v\": \"f16\",\n    \"n_gpu_layers\": -1,\n    \"n_cpu_moe\": 0,\n    \"split_mode\": \"layer\",\n    \"main_gpu\": 0,\n    \"no_kv_offload\": false,\n    \"flash_attn\": -1,\n    \"devices\": \"auto\",\n    \"tensor_split\": \"0.00\",\n    \"tensor_buft_overrides\": \"none\",\n    \"load_mode\": \"mmap\",\n    \"embeddings\": false,\n    \"no_op_offload\": 0,\n    \"no_host\": false,\n    \"fit_target\": 0,\n    \"fit_min_ctx\": 0,\n    \"n_prompt\": 0,\n    \"n_gen\": 64,\n    \"n_depth\": 0,\n    \"test_time\": \"2026-08-29T04:20:17Z\",\n    \"avg_ns\": 2073031643,\n    \"stddev_ns\": 1229427,\n    \"avg_ts\": 30.872667,\n    \"stddev_ts\": 0.018301,\n    \"samples_ns\": [ 2071677386, 2073342836, 2074074708 ],\n    \"samples_ts\": [ 30.8928, 30.868, 30.8571 ]\n  }\n]\n",
+    "memory_before": {
+      "MemFree": 873349120,
+      "MemAvailable": 1559887872,
+      "SwapTotal": 0,
+      "SwapFree": 0,
+      "SwapUsed": 0
+    },
+    "memory_after": {
+      "MemFree": 557318144,
+      "MemAvailable": 1547485184,
+      "SwapTotal": 0,
+      "SwapFree": 0,
+      "SwapUsed": 0
+    }
+  }
+}

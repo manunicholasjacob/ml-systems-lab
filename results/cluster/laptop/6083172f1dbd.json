@@ -1,0 +1,95 @@
+{
+  "run_id": "6083172f1dbd",
+  "experiment": "cluster",
+  "schema_version": "1.0",
+  "lab_version": "0.2.0",
+  "timestamp_utc": "2026-08-29T04:20:16Z",
+  "duration_s": 3.987482299999101,
+  "status": "ok",
+  "warnings": [],
+  "tags": [],
+  "device": {
+    "device_id": "laptop",
+    "kind": "local",
+    "os": "Windows",
+    "os_release": "11",
+    "distro": "Windows-11-10.0.26200-SP0",
+    "kernel": "11",
+    "machine": "AMD64",
+    "cpu": "12th Gen Intel(R) Core(TM) i7-12700H",
+    "logical_cores": 20,
+    "physical_cores": 14,
+    "ram_bytes": 34014814208,
+    "dram_peak_GBs": 53.9,
+    "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU",
+    "gpus": [
+      {
+        "index": 0,
+        "name": "NVIDIA GeForce RTX 3050 Laptop GPU",
+        "driver": "596.08",
+        "compute_capability": "8.6",
+        "memory_total_MiB": 4096,
+        "pcie_gen": 4,
+        "pcie_width": 8,
+        "enforced_power_limit_W": 40.0,
+        "sm_clock_max_MHz": 2100,
+        "mem_clock_max_MHz": 5501
+      }
+    ],
+    "python": "3.14.6",
+    "capabilities": {
+      "temperature": false,
+      "throttle_flags": false,
+      "cpu_freq": false,
+      "pmic": false,
+      "rapl": false,
+      "nvml": false,
+      "nvidia_smi": true,
+      "gpu_energy_source": "nvidia_smi_instantaneous",
+      "cpu_utilisation": true,
+      "peak_rss": false,
+      "dvfs_read": false,
+      "dvfs_write": false
+    },
+    "placement": {}
+  },
+  "backend": {
+    "name": "llamacpp",
+    "version": "10154",
+    "build": "0e4a03622",
+    "execution_provider": "CPU",
+    "library_versions": {}
+  },
+  "workload": {
+    "model": "qwen0.5b-q2k",
+    "model_path": "C:/llmpc/models/qwen0.5b-q2k.gguf",
+    "weight_bytes": 332659200,
+    "params": 0.494032768,
+    "quantization": "Q2_K",
+    "architecture": "qwen2 1B Q2_K - Medium",
+    "prompt_tokens": 128,
+    "output_tokens": 64
+  },
+  "knobs": {
+    "threads": 4,
+    "repetitions": 3,
+    "extra": {}
+  },
+  "metrics": {
+    "prefill_tps": 360.087278,
+    "decode_tps": 103.685321,
+    "decode_bw_GBs": 34.491875935603204,
+    "bw_utilization_pct": 63.992348674588506,
+    "stdev_pct": 12.274546672543092,
+    "extra": {}
+  },
+  "telemetry": {
+    "cpu_util_pct_mean": 34.87648317447968,
+    "sample_hz": 10.0,
+    "sample_count": 39
+  },
+  "raw": {
+    "stdout": "[\r\n  {\r\n    \"build_commit\": \"0e4a03622\",\r\n    \"build_number\": 10154,\r\n    \"cpu_info\": \"12th Gen Intel(R) Core(TM) i7-12700H\",\r\n    \"gpu_info\": \"\",\r\n    \"backends\": \"CPU\",\r\n    \"model_filename\": \"C:/llmpc/models/qwen0.5b-q2k.gguf\",\r\n    \"model_type\": \"qwen2 1B Q2_K - Medium\",\r\n    \"model_size\": 332659200,\r\n    \"model_n_params\": 494032768,\r\n    \"n_batch\": 2048,\r\n    \"n_ubatch\": 512,\r\n    \"n_threads\": 4,\r\n    \"cpu_mask\": \"0x0\",\r\n    \"cpu_strict\": false,\r\n    \"poll\": 50,\r\n    \"type_k\": \"f16\",\r\n    \"type_v\": \"f16\",\r\n    \"n_gpu_layers\": -1,\r\n    \"n_cpu_moe\": 0,\r\n    \"split_mode\": \"layer\",\r\n    \"main_gpu\": 0,\r\n    \"no_kv_offload\": false,\r\n    \"flash_attn\": -1,\r\n    \"devices\": \"auto\",\r\n    \"tensor_split\": \"0.00\",\r\n    \"tensor_buft_overrides\": \"none\",\r\n    \"load_mode\": \"mmap\",\r\n    \"embeddings\": false,\r\n    \"no_op_offload\": 0,\r\n    \"no_host\": false,\r\n    \"fit_target\": 0,\r\n    \"fit_min_ctx\": 0,\r\n    \"n_prompt\": 128,\r\n    \"n_gen\": 0,\r\n    \"n_depth\": 0,\r\n    \"test_time\": \"2026-08-29T04:20:11Z\",\r\n    \"avg_ns\": 358867033,\r\n    \"stddev_ns\": 41548174,\r\n    \"avg_ts\": 360.087278,\r\n    \"stddev_ts\": 44.199081,\r\n    \"samples_ns\": [ 311881600, 390757800, 373961700 ],\r\n    \"samples_ts\": [ 410.412, 327.569, 342.281 ]\r\n  },\r\n  {\r\n    \"build_commit\": \"0e4a03622\",\r\n    \"build_number\": 10154,\r\n    \"cpu_info\": \"12th Gen Intel(R) Core(TM) i7-12700H\",\r\n    \"gpu_info\": \"\",\r\n    \"backends\": \"CPU\",\r\n    \"model_filename\": \"C:/llmpc/models/qwen0.5b-q2k.gguf\",\r\n    \"model_type\": \"qwen2 1B Q2_K - Medium\",\r\n    \"model_size\": 332659200,\r\n    \"model_n_params\": 494032768,\r\n    \"n_batch\": 2048,\r\n    \"n_ubatch\": 512,\r\n    \"n_threads\": 4,\r\n    \"cpu_mask\": \"0x0\",\r\n    \"cpu_strict\": false,\r\n    \"poll\": 50,\r\n    \"type_k\": \"f16\",\r\n    \"type_v\": \"f16\",\r\n    \"n_gpu_layers\": -1,\r\n    \"n_cpu_moe\": 0,\r\n    \"split_mode\": \"layer\",\r\n    \"main_gpu\": 0,\r\n    \"no_kv_offload\": false,\r\n    \"flash_attn\": -1,\r\n    \"devices\": \"auto\",\r\n    \"tensor_split\": \"0.00\",\r\n    \"tensor_buft_overrides\": \"none\",\r\n    \"load_mode\": \"mmap\",\r\n    \"embeddings\": false,\r\n    \"no_op_offload\": 0,\r\n    \"no_host\": false,\r\n    \"fit_target\": 0,\r\n    \"fit_min_ctx\": 0,\r\n    \"n_prompt\": 0,\r\n    \"n_gen\": 64,\r\n    \"n_depth\": 0,\r\n    \"test_time\": \"2026-08-29T04:20:13Z\",\r\n    \"avg_ns\": 618553866,\r\n    \"stddev_ns\": 34198079,\r\n    \"avg_ts\": 103.685321,\r\n    \"stddev_ts\": 5.919523,\r\n    \"samples_ns\": [ 636582100, 639965800, 579113700 ],\r\n    \"samples_ts\": [ 100.537, 100.005, 110.514 ]\r\n  }\r\n]\r\n",
+    "stderr": "load_backend: loaded RPC backend from C:\\llmpc\\bin\\ggml-rpc.dll\r\nload_backend: loaded CPU backend from C:\\llmpc\\bin\\ggml-cpu-alderlake.dll\r\n"
+  }
+}

@@ -185,9 +185,11 @@ def task_server_latency(task: Dict[str, Any]) -> Dict[str, Any]:
     proc = None
     warnings: List[str] = []
     try:
+        server_env = dict(os.environ)
+        server_env.update({str(k): str(v) for k, v in (task.get("env") or {}).items()})
         proc = subprocess.Popen(
             server_argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            stdin=subprocess.DEVNULL,
+            stdin=subprocess.DEVNULL, env=server_env,
         )
     except OSError as exc:
         return {"status": "failed", "error": f"could not start server: {exc}"}
@@ -337,6 +339,10 @@ TASKS = {
 
 
 def execute(task: Dict[str, Any]) -> Dict[str, Any]:
+    # Stamped before any work, and again after. The host needs both: with only one it
+    # cannot tell a clock that is genuinely ahead from an agent that spent two seconds
+    # shelling out to collect sysinfo before answering.
+    started_epoch = time.time()
     kind = task.get("kind", "command")
     handler = TASKS.get(kind)
     if handler is None:
@@ -361,6 +367,12 @@ def execute(task: Dict[str, Any]) -> Dict[str, Any]:
     result["device"] = sysinfo.collect(task.get("device_id"), task.get("device_kind", "local"))
     result["capabilities"] = capabilities()
     result["agent_time_utc"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    # Sub-second, and both ends of the agent's own execution. The host uses these to
+    # estimate clock skew before it trusts any cross-device timing; one-second
+    # resolution would put the answer inside the noise, and one timestamp instead of
+    # two would put the agent's own runtime inside the answer.
+    result["agent_started_epoch_s"] = started_epoch
+    result["agent_epoch_s"] = time.time()
     if task.get("measure_idle_power"):
         idle = power.measure_idle_power_w()
         if idle is not None:
