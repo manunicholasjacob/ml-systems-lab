@@ -1,0 +1,146 @@
+{
+  "run_id": "10feb0c6f614",
+  "experiment": "containerization-tax",
+  "schema_version": "1.0",
+  "lab_version": "0.2.0",
+  "timestamp_utc": "2026-08-29T03:38:06Z",
+  "duration_s": 39.73815177100005,
+  "status": "ok",
+  "warnings": [],
+  "tags": [],
+  "device": {
+    "device_id": "k8s-cpu2",
+    "kind": "k8s",
+    "os": "Linux",
+    "os_release": "6.18.33.2-microsoft-standard-WSL2",
+    "distro": "Debian GNU/Linux 12 (bookworm)",
+    "kernel": "6.18.33.2-microsoft-standard-WSL2",
+    "machine": "x86_64",
+    "cpu": "12th Gen Intel(R) Core(TM) i7-12700H",
+    "cpu_flags": [
+      "avx",
+      "avx2",
+      "avx_vnni",
+      "f16c",
+      "fma",
+      "sse4_2"
+    ],
+    "logical_cores": 20,
+    "physical_cores": 10,
+    "ram_bytes": 16595456000,
+    "swap_bytes": 4294967296,
+    "dram_peak_GBs": 53.9,
+    "gpus": [],
+    "python": "3.11.16",
+    "libc": "glibc 2.36",
+    "capabilities": {
+      "temperature": false,
+      "throttle_flags": false,
+      "cpu_freq": false,
+      "pmic": false,
+      "rapl": false,
+      "nvml": false,
+      "nvidia_smi": false,
+      "cpu_utilisation": true,
+      "peak_rss": true,
+      "dvfs_read": false,
+      "dvfs_write": false
+    },
+    "placement": {
+      "runtime": "kubernetes",
+      "namespace": "mlsyslab",
+      "pod": "mlsyslab-cpu2",
+      "container": "agent",
+      "image": "docker.io/library/mlsyslab-agent:0.2.0",
+      "image_id": "sha256:a426b12530da5779ba1cf5b48aa296ef96e605308767a33a7f3686a65b6ddb3a",
+      "node": "manuxps15",
+      "qos_class": "Burstable",
+      "cgroup": {
+        "cgroup_version": 2,
+        "cpu.max": "200000 100000",
+        "memory.max": "4294967296",
+        "cpu.weight": "174",
+        "cpuset.cpus.effective": "0-19",
+        "cpu_quota_cores": 2.0
+      },
+      "cpu_quota_cores": 2.0
+    }
+  },
+  "backend": {
+    "name": "llamacpp",
+    "version": "10680",
+    "build": "d7bd3bfca",
+    "execution_provider": "CPU",
+    "library_versions": {}
+  },
+  "workload": {
+    "model": "qwen0.5b-q8",
+    "model_path": "/models/qwen0.5b-q8.gguf",
+    "weight_bytes": 525120000,
+    "params": 0.494032768,
+    "quantization": "Q8_0",
+    "architecture": "qwen2 1B Q8_0",
+    "prompt_tokens": 128,
+    "output_tokens": 64
+  },
+  "knobs": {
+    "threads": 4,
+    "repetitions": 10,
+    "extra": {}
+  },
+  "metrics": {
+    "prefill_tps": 98.117154,
+    "decode_tps": 26.073725,
+    "decode_bw_GBs": 13.691834472,
+    "bw_utilization_pct": 25.402290300556587,
+    "stdev_pct": 7.858459042580222,
+    "extra": {}
+  },
+  "telemetry": {
+    "cpu_util_pct_mean": 13.677584027684041,
+    "cpu_util_pct_per_core": [
+      38.4,
+      4.4,
+      2.9,
+      1.4,
+      1.6,
+      1.6,
+      18.7,
+      32.6,
+      49.7,
+      0.6,
+      1.7,
+      1.1,
+      25.2,
+      25.3,
+      1.9,
+      0.3,
+      50.1,
+      0.1,
+      2.3,
+      1.4
+    ],
+    "freq_khz_mean": 2687999.0,
+    "freq_khz_min": 2687999,
+    "freq_khz_max": 2687999,
+    "sample_hz": 10.0,
+    "sample_count": 396
+  },
+  "raw": {
+    "stdout": "[\n  {\n    \"build_commit\": \"d7bd3bfca\",\n    \"build_number\": 10680,\n    \"cpu_info\": \"12th Gen Intel(R) Core(TM) i7-12700H\",\n    \"gpu_info\": \"\",\n    \"backends\": \"CPU\",\n    \"model_filename\": \"/models/qwen0.5b-q8.gguf\",\n    \"model_type\": \"qwen2 1B Q8_0\",\n    \"model_size\": 525120000,\n    \"model_n_params\": 494032768,\n    \"n_batch\": 2048,\n    \"n_ubatch\": 512,\n    \"n_threads\": 4,\n    \"cpu_mask\": \"0x0\",\n    \"cpu_strict\": false,\n    \"poll\": 50,\n    \"type_k\": \"f16\",\n    \"type_v\": \"f16\",\n    \"n_gpu_layers\": -1,\n    \"n_cpu_moe\": 0,\n    \"split_mode\": \"layer\",\n    \"main_gpu\": 0,\n    \"no_kv_offload\": false,\n    \"flash_attn\": -1,\n    \"devices\": \"auto\",\n    \"tensor_split\": \"0.00\",\n    \"tensor_buft_overrides\": \"none\",\n    \"load_mode\": \"auto\",\n    \"lazy_mode\": \"auto\",\n    \"embeddings\": false,\n    \"no_op_offload\": 0,\n    \"no_host\": false,\n    \"fit_target\": 0,\n    \"fit_min_ctx\": 0,\n    \"n_prompt\": 128,\n    \"n_gen\": 0,\n    \"n_depth\": 0,\n    \"test_time\": \"2026-08-29T03:37:26Z\",\n    \"avg_ns\": 1310084919,\n    \"stddev_ns\": 91236120,\n    \"avg_ts\": 98.117154,\n    \"stddev_ts\": 6.617907,\n    \"samples_ns\": [ 1372186237, 1240374270, 1200834217, 1282334718, 1197483288, 1308647191, 1384855572, 1496959603, 1320749120, 1296424981 ],\n    \"samples_ts\": [ 93.2818, 103.195, 106.593, 99.8179, 106.891, 97.8109, 92.4284, 85.5066, 96.9147, 98.7331 ]\n  },\n  {\n    \"build_commit\": \"d7bd3bfca\",\n    \"build_number\": 10680,\n    \"cpu_info\": \"12th Gen Intel(R) Core(TM) i7-12700H\",\n    \"gpu_info\": \"\",\n    \"backends\": \"CPU\",\n    \"model_filename\": \"/models/qwen0.5b-q8.gguf\",\n    \"model_type\": \"qwen2 1B Q8_0\",\n    \"model_size\": 525120000,\n    \"model_n_params\": 494032768,\n    \"n_batch\": 2048,\n    \"n_ubatch\": 512,\n    \"n_threads\": 4,\n    \"cpu_mask\": \"0x0\",\n    \"cpu_strict\": false,\n    \"poll\": 50,\n    \"type_k\": \"f16\",\n    \"type_v\": \"f16\",\n    \"n_gpu_layers\": -1,\n    \"n_cpu_moe\": 0,\n    \"split_mode\": \"layer\",\n    \"main_gpu\": 0,\n    \"no_kv_offload\": false,\n    \"flash_attn\": -1,\n    \"devices\": \"auto\",\n    \"tensor_split\": \"0.00\",\n    \"tensor_buft_overrides\": \"none\",\n    \"load_mode\": \"auto\",\n    \"lazy_mode\": \"auto\",\n    \"embeddings\": false,\n    \"no_op_offload\": 0,\n    \"no_host\": false,\n    \"fit_target\": 0,\n    \"fit_min_ctx\": 0,\n    \"n_prompt\": 0,\n    \"n_gen\": 64,\n    \"n_depth\": 0,\n    \"test_time\": \"2026-08-29T03:37:41Z\",\n    \"avg_ns\": 2468942908,\n    \"stddev_ns\": 203800921,\n    \"avg_ts\": 26.073725,\n    \"stddev_ts\": 2.048993,\n    \"samples_ns\": [ 2513996237, 2308083319, 2384125297, 2206460892, 2382987845, 2502335650, 2721897181, 2878045412, 2297646590, 2493850657 ],\n    \"samples_ts\": [ 25.4575, 27.7286, 26.8442, 29.0057, 26.857, 25.5761, 23.513, 22.2373, 27.8546, 25.6631 ]\n  }\n]\n",
+    "memory_before": {
+      "MemFree": 8353243136,
+      "MemAvailable": 14546620416,
+      "SwapTotal": 4294967296,
+      "SwapFree": 4294967296,
+      "SwapUsed": 0
+    },
+    "memory_after": {
+      "MemFree": 8377135104,
+      "MemAvailable": 14570545152,
+      "SwapTotal": 4294967296,
+      "SwapFree": 4294967296,
+      "SwapUsed": 0
+    }
+  }
+}

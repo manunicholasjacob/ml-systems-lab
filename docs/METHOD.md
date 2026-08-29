@@ -187,3 +187,47 @@ the usual hardware-free way, and the identity and instantaneous-power paths were
 against an RTX 3050. The first datacenter session should start by running
 `python -m mlsyslab.membw --device --json` and sanity-checking the number against the
 part's datasheet before trusting any percentage derived from it.
+
+## Containers
+
+A container is a device like any other in this framework, but four of these rules bind
+harder inside one than outside, and one is new.
+
+**The effective limit, never the configured one.** A CPU quota changes throughput, so a
+run under one is not comparable to a run without one. `DeviceInfo.placement` therefore
+carries the cgroup ceilings read from *inside* the container at run time, alongside the
+pod, node, image digest and QoS class. A config can ask for `cpu_limit: "4"` and get
+something else: an admission controller can rewrite it, and Kubernetes copies limits into
+requests when requests are absent, which turns a ceiling into a reservation and changes
+scheduling. Believe the pod, not the file.
+
+**A tag is not a version.** Two runs a week apart against `image:0.2.0` are not the same
+experiment. The base image is pinned by digest in `docker/Dockerfile` and the digest of
+the image that actually ran is recorded per run. A pod whose spec no longer matches the
+config that is driving it is deleted and recreated rather than reused, because reusing it
+would run the sweep under the old limits and label the results with the new ones.
+
+**Devices that share a CPU must not run at once.** A host and the pods scheduled onto it
+are several device ids and one machine, and running them concurrently measures contention
+rather than anything else. The scheduler's `resource_group` holds one job between them,
+and takes turns, so no arm of a comparison sits in a different part of the machine's
+thermal history from the others. This is the idle-machine rule applied to a machine that
+is competing with itself.
+
+**Compare the same bytes.** A host-versus-container comparison where each side compiled
+its own binary is measuring the compiler. `docker/README.md` extracts the binaries from
+the image for the host arm precisely so that the only difference between the arms is the
+thing under test. The model file is mounted from the node read-only for the same reason:
+every arm reads the same inode and no overlayfs copy sits in the read path.
+
+**A quota does not only move the mean.** Run-to-run spread widens under a CFS quota,
+because throttling is bursty: the process is stopped at the end of each period and
+resumed at the start of the next, and the effect on any individual run depends on where
+its work landed relative to those boundaries. Report the spread per arm, not just the
+average, and read the average of a heavily throttled arm accordingly.
+
+One operational note that is easy to lose an evening to: a severely CPU-throttled pod is
+hard to `kubectl exec` into. During the containerisation sweep the two-core arm failed
+three consecutive execs, the scheduler's circuit breaker opened, and it recovered on the
+next probe. That is the intended behaviour, and it is also a reminder that the control
+plane and the workload share the quota.

@@ -4,6 +4,63 @@ Each directory here is a complete, committed dataset: RunRecords plus the genera
 report. Working runs live in `runs/` (gitignored); a dataset moves here when it is
 finished, clean, and worth citing.
 
+## containerization/
+
+What containerisation and orchestration cost an inference benchmark, and whether they
+change the ranking of the things being compared. Five arms on one i7-12700H: a host
+process, and pods with no CPU quota, an 8-core quota, a 4-core quota and a 2-core quota,
+all running four threads. 50 records across two independent passes of the matrix, in
+`pass1/` and `pass2/`; `REPORT.md` and `containerization.png` are generated from both by
+`tools/containerization_report.py`.
+
+The short version: this measurement cannot find a cost of containerisation. Fourteen of
+fifteen host-versus-pod comparisons are inside the run-to-run noise, and the mean
+difference is under 3% in the pod's favour. A quota *below* the thread count is a
+different matter, costing 64% of decode throughput and resolved on every point. The
+ranking of the five model/quantisation combinations is identical in all five arms,
+including that one, so a comparison run inside a pod picks the same winner as the same
+comparison run outside one.
+
+What makes it a measurement rather than an anecdote is in the report's Controls section,
+but three things carry most of it: llama-bench is built once and the host arm runs the
+binary extracted from the same image, so no difference can be a compiler; the model file
+is mounted from the node read-only, so every arm reads the same inode; and the five
+"devices" declare a shared resource group, so the arms take turns on the one CPU they
+share instead of competing.
+
+Every record carries the cgroup ceilings read from *inside* its own container, so the
+quota in the table is the quota that applied rather than the one the config asked for.
+
+## cluster/
+
+Six runs, three genuinely different machines, one YAML, all at once: the Windows laptop
+locally, a 2 GB Raspberry Pi 5 over SSH on a tailnet, and a Kubernetes pod with a 4-core
+CFS quota on the laptop's Linux side. Small on purpose. It exists to show that the
+scheduler and the device abstraction hold across three device kinds at the same time,
+not to say anything about the hardware.
+
+`schedule.json` is the interesting file. It records that the laptop and the pod shared a
+resource group and took turns while the Pi overlapped both, that two transport failures
+were retried and logged, and the clock offsets:
+
+| device | offset | uncertainty | round trip | agent runtime |
+|---|---|---|---|---|
+| laptop | +0.045 s | 0.061 s | 1.906 s | 1.789 s |
+| pi5 | +1.846 s | 2.183 s | 4.374 s | 0.012 s |
+
+Those two rows are worth reading together. Almost all of the laptop's round trip is the
+agent's own work collecting sysinfo, and the estimator subtracts it rather than reporting
+it as clock error; an earlier version that used only the agent's finishing timestamp
+called this machine nearly a second out of step with itself. The Pi's apparent offset is
+inside its own uncertainty over the tailnet, so it is reported without a warning: that is
+"cannot tell", not "wrong".
+
+The Kubernetes pod had been deleted before this sweep started. The clock check says so,
+the first two attempts on it failed and were classified as transport failures rather than
+configuration errors, the pod was recreated, and both points completed on the retry. The
+run is kept as it happened rather than re-run clean, because that sequence is the thing
+worth showing.
+
 ## paper12/
 
 The measurements behind "The Memory Wall at the Edge of Language" (submitted to IEEE

@@ -1,0 +1,430 @@
+{
+  "experiment": "containerization-tax",
+  "source_config": "C:\\Users\\manun\\OneDrive\\Documents\\Claudecode\\ml-systems-lab\\configs\\containerization.yaml",
+  "created_utc": "2026-08-29T03:34:11Z",
+  "run_count": 25,
+  "devices": {
+    "wsl-host": {
+      "kind": "ssh",
+      "host": "127.0.0.1",
+      "user": "manu",
+      "identity_file": "~/.ssh/wsl_lab_key",
+      "python": "python3",
+      "workdir": "~/.mlsyslab",
+      "dram_peak_GBs": 53.9,
+      "resource_group": "laptop-cpu",
+      "llamacpp": {
+        "bin_dir": "/home/manu/llama-bin",
+        "env": {
+          "LD_LIBRARY_PATH": "/home/manu/llama-bin"
+        }
+      }
+    },
+    "k8s-unlimited": {
+      "kind": "k8s",
+      "kubectl": [
+        "wsl",
+        "-d",
+        "Ubuntu",
+        "--exec",
+        "k3s",
+        "kubectl"
+      ],
+      "namespace": "mlsyslab",
+      "pod": "mlsyslab-unlimited",
+      "image": "docker.io/library/mlsyslab-agent:0.2.0",
+      "dram_peak_GBs": 53.9,
+      "resource_group": "laptop-cpu",
+      "memory_request": "2Gi",
+      "memory_limit": "4Gi",
+      "host_mounts": [
+        {
+          "host_path": "/home/manu/models",
+          "mount_path": "/models",
+          "read_only": true
+        }
+      ],
+      "llamacpp": {
+        "bin_dir": "/usr/local/bin"
+      }
+    },
+    "k8s-cpu8": {
+      "kind": "k8s",
+      "kubectl": [
+        "wsl",
+        "-d",
+        "Ubuntu",
+        "--exec",
+        "k3s",
+        "kubectl"
+      ],
+      "namespace": "mlsyslab",
+      "pod": "mlsyslab-cpu8",
+      "image": "docker.io/library/mlsyslab-agent:0.2.0",
+      "dram_peak_GBs": 53.9,
+      "resource_group": "laptop-cpu",
+      "cpu_limit": "8",
+      "cpu_request": "8",
+      "memory_request": "2Gi",
+      "memory_limit": "4Gi",
+      "host_mounts": [
+        {
+          "host_path": "/home/manu/models",
+          "mount_path": "/models",
+          "read_only": true
+        }
+      ],
+      "llamacpp": {
+        "bin_dir": "/usr/local/bin"
+      }
+    },
+    "k8s-cpu4": {
+      "kind": "k8s",
+      "kubectl": [
+        "wsl",
+        "-d",
+        "Ubuntu",
+        "--exec",
+        "k3s",
+        "kubectl"
+      ],
+      "namespace": "mlsyslab",
+      "pod": "mlsyslab-cpu4",
+      "image": "docker.io/library/mlsyslab-agent:0.2.0",
+      "dram_peak_GBs": 53.9,
+      "resource_group": "laptop-cpu",
+      "cpu_limit": "4",
+      "cpu_request": "4",
+      "memory_request": "2Gi",
+      "memory_limit": "4Gi",
+      "host_mounts": [
+        {
+          "host_path": "/home/manu/models",
+          "mount_path": "/models",
+          "read_only": true
+        }
+      ],
+      "llamacpp": {
+        "bin_dir": "/usr/local/bin"
+      }
+    },
+    "k8s-cpu2": {
+      "kind": "k8s",
+      "kubectl": [
+        "wsl",
+        "-d",
+        "Ubuntu",
+        "--exec",
+        "k3s",
+        "kubectl"
+      ],
+      "namespace": "mlsyslab",
+      "pod": "mlsyslab-cpu2",
+      "image": "docker.io/library/mlsyslab-agent:0.2.0",
+      "dram_peak_GBs": 53.9,
+      "resource_group": "laptop-cpu",
+      "cpu_limit": "2",
+      "cpu_request": "2",
+      "memory_request": "2Gi",
+      "memory_limit": "4Gi",
+      "host_mounts": [
+        {
+          "host_path": "/home/manu/models",
+          "mount_path": "/models",
+          "read_only": true
+        }
+      ],
+      "llamacpp": {
+        "bin_dir": "/usr/local/bin"
+      }
+    }
+  },
+  "models": {
+    "qwen0.5b-fp16": {
+      "quantization": "F16",
+      "params": 0.5,
+      "paths": {
+        "wsl-host": "/home/manu/models/qwen0.5b-fp16.gguf",
+        "k8s-unlimited": "/models/qwen0.5b-fp16.gguf",
+        "k8s-cpu8": "/models/qwen0.5b-fp16.gguf",
+        "k8s-cpu4": "/models/qwen0.5b-fp16.gguf",
+        "k8s-cpu2": "/models/qwen0.5b-fp16.gguf"
+      }
+    },
+    "qwen0.5b-q8": {
+      "quantization": "Q8_0",
+      "params": 0.5,
+      "paths": {
+        "wsl-host": "/home/manu/models/qwen0.5b-q8.gguf",
+        "k8s-unlimited": "/models/qwen0.5b-q8.gguf",
+        "k8s-cpu8": "/models/qwen0.5b-q8.gguf",
+        "k8s-cpu4": "/models/qwen0.5b-q8.gguf",
+        "k8s-cpu2": "/models/qwen0.5b-q8.gguf"
+      }
+    },
+    "qwen0.5b-q4km": {
+      "quantization": "Q4_K_M",
+      "params": 0.5,
+      "paths": {
+        "wsl-host": "/home/manu/models/qwen0.5b-q4km.gguf",
+        "k8s-unlimited": "/models/qwen0.5b-q4km.gguf",
+        "k8s-cpu8": "/models/qwen0.5b-q4km.gguf",
+        "k8s-cpu4": "/models/qwen0.5b-q4km.gguf",
+        "k8s-cpu2": "/models/qwen0.5b-q4km.gguf"
+      }
+    },
+    "qwen0.5b-q2k": {
+      "quantization": "Q2_K",
+      "params": 0.5,
+      "paths": {
+        "wsl-host": "/home/manu/models/qwen0.5b-q2k.gguf",
+        "k8s-unlimited": "/models/qwen0.5b-q2k.gguf",
+        "k8s-cpu8": "/models/qwen0.5b-q2k.gguf",
+        "k8s-cpu4": "/models/qwen0.5b-q2k.gguf",
+        "k8s-cpu2": "/models/qwen0.5b-q2k.gguf"
+      }
+    },
+    "qwen1.5b-q4km": {
+      "quantization": "Q4_K_M",
+      "params": 1.5,
+      "paths": {
+        "wsl-host": "/home/manu/models/qwen1.5b-q4km.gguf",
+        "k8s-unlimited": "/models/qwen1.5b-q4km.gguf",
+        "k8s-cpu8": "/models/qwen1.5b-q4km.gguf",
+        "k8s-cpu4": "/models/qwen1.5b-q4km.gguf",
+        "k8s-cpu2": "/models/qwen1.5b-q4km.gguf"
+      }
+    }
+  },
+  "config": {
+    "experiment": "containerization-tax",
+    "output_dir": "runs/containerization-tax",
+    "devices": {
+      "wsl-host": {
+        "kind": "ssh",
+        "host": "127.0.0.1",
+        "user": "manu",
+        "identity_file": "~/.ssh/wsl_lab_key",
+        "python": "python3",
+        "workdir": "~/.mlsyslab",
+        "dram_peak_GBs": 53.9,
+        "resource_group": "laptop-cpu",
+        "llamacpp": {
+          "bin_dir": "/home/manu/llama-bin",
+          "env": {
+            "LD_LIBRARY_PATH": "/home/manu/llama-bin"
+          }
+        }
+      },
+      "k8s-unlimited": {
+        "kind": "k8s",
+        "kubectl": [
+          "wsl",
+          "-d",
+          "Ubuntu",
+          "--exec",
+          "k3s",
+          "kubectl"
+        ],
+        "namespace": "mlsyslab",
+        "pod": "mlsyslab-unlimited",
+        "image": "docker.io/library/mlsyslab-agent:0.2.0",
+        "dram_peak_GBs": 53.9,
+        "resource_group": "laptop-cpu",
+        "memory_request": "2Gi",
+        "memory_limit": "4Gi",
+        "host_mounts": [
+          {
+            "host_path": "/home/manu/models",
+            "mount_path": "/models",
+            "read_only": true
+          }
+        ],
+        "llamacpp": {
+          "bin_dir": "/usr/local/bin"
+        }
+      },
+      "k8s-cpu8": {
+        "kind": "k8s",
+        "kubectl": [
+          "wsl",
+          "-d",
+          "Ubuntu",
+          "--exec",
+          "k3s",
+          "kubectl"
+        ],
+        "namespace": "mlsyslab",
+        "pod": "mlsyslab-cpu8",
+        "image": "docker.io/library/mlsyslab-agent:0.2.0",
+        "dram_peak_GBs": 53.9,
+        "resource_group": "laptop-cpu",
+        "cpu_limit": "8",
+        "cpu_request": "8",
+        "memory_request": "2Gi",
+        "memory_limit": "4Gi",
+        "host_mounts": [
+          {
+            "host_path": "/home/manu/models",
+            "mount_path": "/models",
+            "read_only": true
+          }
+        ],
+        "llamacpp": {
+          "bin_dir": "/usr/local/bin"
+        }
+      },
+      "k8s-cpu4": {
+        "kind": "k8s",
+        "kubectl": [
+          "wsl",
+          "-d",
+          "Ubuntu",
+          "--exec",
+          "k3s",
+          "kubectl"
+        ],
+        "namespace": "mlsyslab",
+        "pod": "mlsyslab-cpu4",
+        "image": "docker.io/library/mlsyslab-agent:0.2.0",
+        "dram_peak_GBs": 53.9,
+        "resource_group": "laptop-cpu",
+        "cpu_limit": "4",
+        "cpu_request": "4",
+        "memory_request": "2Gi",
+        "memory_limit": "4Gi",
+        "host_mounts": [
+          {
+            "host_path": "/home/manu/models",
+            "mount_path": "/models",
+            "read_only": true
+          }
+        ],
+        "llamacpp": {
+          "bin_dir": "/usr/local/bin"
+        }
+      },
+      "k8s-cpu2": {
+        "kind": "k8s",
+        "kubectl": [
+          "wsl",
+          "-d",
+          "Ubuntu",
+          "--exec",
+          "k3s",
+          "kubectl"
+        ],
+        "namespace": "mlsyslab",
+        "pod": "mlsyslab-cpu2",
+        "image": "docker.io/library/mlsyslab-agent:0.2.0",
+        "dram_peak_GBs": 53.9,
+        "resource_group": "laptop-cpu",
+        "cpu_limit": "2",
+        "cpu_request": "2",
+        "memory_request": "2Gi",
+        "memory_limit": "4Gi",
+        "host_mounts": [
+          {
+            "host_path": "/home/manu/models",
+            "mount_path": "/models",
+            "read_only": true
+          }
+        ],
+        "llamacpp": {
+          "bin_dir": "/usr/local/bin"
+        }
+      }
+    },
+    "models": {
+      "qwen0.5b-fp16": {
+        "quantization": "F16",
+        "params": 0.5,
+        "paths": {
+          "wsl-host": "/home/manu/models/qwen0.5b-fp16.gguf",
+          "k8s-unlimited": "/models/qwen0.5b-fp16.gguf",
+          "k8s-cpu8": "/models/qwen0.5b-fp16.gguf",
+          "k8s-cpu4": "/models/qwen0.5b-fp16.gguf",
+          "k8s-cpu2": "/models/qwen0.5b-fp16.gguf"
+        }
+      },
+      "qwen0.5b-q8": {
+        "quantization": "Q8_0",
+        "params": 0.5,
+        "paths": {
+          "wsl-host": "/home/manu/models/qwen0.5b-q8.gguf",
+          "k8s-unlimited": "/models/qwen0.5b-q8.gguf",
+          "k8s-cpu8": "/models/qwen0.5b-q8.gguf",
+          "k8s-cpu4": "/models/qwen0.5b-q8.gguf",
+          "k8s-cpu2": "/models/qwen0.5b-q8.gguf"
+        }
+      },
+      "qwen0.5b-q4km": {
+        "quantization": "Q4_K_M",
+        "params": 0.5,
+        "paths": {
+          "wsl-host": "/home/manu/models/qwen0.5b-q4km.gguf",
+          "k8s-unlimited": "/models/qwen0.5b-q4km.gguf",
+          "k8s-cpu8": "/models/qwen0.5b-q4km.gguf",
+          "k8s-cpu4": "/models/qwen0.5b-q4km.gguf",
+          "k8s-cpu2": "/models/qwen0.5b-q4km.gguf"
+        }
+      },
+      "qwen0.5b-q2k": {
+        "quantization": "Q2_K",
+        "params": 0.5,
+        "paths": {
+          "wsl-host": "/home/manu/models/qwen0.5b-q2k.gguf",
+          "k8s-unlimited": "/models/qwen0.5b-q2k.gguf",
+          "k8s-cpu8": "/models/qwen0.5b-q2k.gguf",
+          "k8s-cpu4": "/models/qwen0.5b-q2k.gguf",
+          "k8s-cpu2": "/models/qwen0.5b-q2k.gguf"
+        }
+      },
+      "qwen1.5b-q4km": {
+        "quantization": "Q4_K_M",
+        "params": 1.5,
+        "paths": {
+          "wsl-host": "/home/manu/models/qwen1.5b-q4km.gguf",
+          "k8s-unlimited": "/models/qwen1.5b-q4km.gguf",
+          "k8s-cpu8": "/models/qwen1.5b-q4km.gguf",
+          "k8s-cpu4": "/models/qwen1.5b-q4km.gguf",
+          "k8s-cpu2": "/models/qwen1.5b-q4km.gguf"
+        }
+      }
+    },
+    "defaults": {
+      "backend": "llamacpp",
+      "repetitions": 10
+    },
+    "matrix": [
+      {
+        "devices": [
+          "wsl-host",
+          "k8s-unlimited",
+          "k8s-cpu8",
+          "k8s-cpu4",
+          "k8s-cpu2"
+        ],
+        "models": [
+          "qwen0.5b-fp16",
+          "qwen0.5b-q8",
+          "qwen0.5b-q4km",
+          "qwen0.5b-q2k",
+          "qwen1.5b-q4km"
+        ],
+        "modes": [
+          "throughput"
+        ],
+        "threads": [
+          4
+        ],
+        "prompt_tokens": [
+          128
+        ],
+        "output_tokens": [
+          64
+        ]
+      }
+    ]
+  }
+}

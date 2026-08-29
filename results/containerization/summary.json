@@ -1,0 +1,136 @@
+{
+  "arms": [
+    "wsl-host",
+    "k8s-unlimited",
+    "k8s-cpu8",
+    "k8s-cpu4",
+    "k8s-cpu2"
+  ],
+  "models": [
+    "qwen0.5b-q2k",
+    "qwen0.5b-q4km",
+    "qwen0.5b-q8",
+    "qwen0.5b-fp16",
+    "qwen1.5b-q4km"
+  ],
+  "metric": "decode_tps",
+  "overhead_pct_vs_host": {
+    "k8s-unlimited": 2.31,
+    "k8s-cpu8": 2.17,
+    "k8s-cpu4": 3.11,
+    "k8s-cpu2": -64.14
+  },
+  "overhead_range_pct": {
+    "k8s-unlimited": [
+      0.39,
+      6.01
+    ],
+    "k8s-cpu8": [
+      0.14,
+      6.16
+    ],
+    "k8s-cpu4": [
+      -0.62,
+      9.77
+    ],
+    "k8s-cpu2": [
+      -67.68,
+      -61.98
+    ]
+  },
+  "ranking_by_arm": {
+    "wsl-host": [
+      "qwen0.5b-q2k",
+      "qwen0.5b-q4km",
+      "qwen0.5b-q8",
+      "qwen0.5b-fp16",
+      "qwen1.5b-q4km"
+    ],
+    "k8s-unlimited": [
+      "qwen0.5b-q2k",
+      "qwen0.5b-q4km",
+      "qwen0.5b-q8",
+      "qwen0.5b-fp16",
+      "qwen1.5b-q4km"
+    ],
+    "k8s-cpu8": [
+      "qwen0.5b-q2k",
+      "qwen0.5b-q4km",
+      "qwen0.5b-q8",
+      "qwen0.5b-fp16",
+      "qwen1.5b-q4km"
+    ],
+    "k8s-cpu4": [
+      "qwen0.5b-q2k",
+      "qwen0.5b-q4km",
+      "qwen0.5b-q8",
+      "qwen0.5b-fp16",
+      "qwen1.5b-q4km"
+    ],
+    "k8s-cpu2": [
+      "qwen0.5b-q2k",
+      "qwen0.5b-q4km",
+      "qwen0.5b-q8",
+      "qwen0.5b-fp16",
+      "qwen1.5b-q4km"
+    ]
+  },
+  "arms_that_reordered": [],
+  "arms_whose_order_differed_within_noise": [],
+  "points_resolved_vs_total": {
+    "k8s-unlimited": [
+      0,
+      5
+    ],
+    "k8s-cpu8": [
+      0,
+      5
+    ],
+    "k8s-cpu4": [
+      1,
+      5
+    ],
+    "k8s-cpu2": [
+      5,
+      5
+    ]
+  },
+  "run_to_run_spread_pct": {
+    "wsl-host": [
+      12.4,
+      20.8
+    ],
+    "k8s-unlimited": [
+      11.5,
+      16.2
+    ],
+    "k8s-cpu8": [
+      11.5,
+      15.8
+    ],
+    "k8s-cpu4": [
+      9.4,
+      13.0
+    ],
+    "k8s-cpu2": [
+      12.5,
+      14.8
+    ]
+  },
+  "passes": [
+    1,
+    2
+  ],
+  "worst_pass_to_pass_delta_pct": 21.37,
+  "cpu_quota_cores": {
+    "k8s-cpu2": 2.0,
+    "k8s-cpu4": 4.0,
+    "k8s-cpu8": 8.0,
+    "k8s-unlimited": null,
+    "wsl-host": null
+  },
+  "image_ids": [
+    "sha256:a426b12530da5779ba1cf5b48aa296ef96e605308767a33a7f3686a65b6ddb3a"
+  ],
+  "n_records": 50
+}

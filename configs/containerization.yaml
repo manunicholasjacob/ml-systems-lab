@@ -1,0 +1,225 @@
+# What does containerisation cost an inference benchmark, and does it change the ranking?
+#
+# Four arms, one machine, one binary. Everything that is not the thing under test is held
+# fixed, which is what makes the difference between the arms attributable:
+#
+#   wsl-host        an ordinary process on the Linux host. No container of any kind.
+#   k8s-unlimited   the same binary in a pod with no CPU limit. Isolates containerisation
+#                   and orchestration: namespaces, overlayfs, CNI, a pod sandbox.
+#   k8s-cpu8        the same pod with a CFS quota of 8 cores, twice the thread count.
+#   k8s-cpu4        the same pod with a quota of 4 cores, exactly the thread count.
+#   k8s-cpu2        the same pod with a quota of 2 cores, half the thread count.
+#
+# Splitting "container" into "container" and "container with a quota" is deliberate. They
+# are different mechanisms with different costs, and lumping them together would produce
+# one number that could not be acted on. The three quota levels turn the second one into a
+# dose-response rather than a single point.
+#
+# The controls that make this a measurement rather than an anecdote:
+#
+# * ONE BINARY. llama-bench is built once, in docker/Dockerfile, and the host copy is
+#   extracted from that same image. Both arms run identical bytes, so no part of any
+#   difference can be a compiler or a build flag. See docker/README.md.
+# * ONE MODEL FILE. The pods mount /home/manu/models from the node read-only, so every
+#   arm reads the same inode. No overlayfs copy sits in the model read path, which keeps
+#   this a question about CPU and scheduling rather than about storage.
+# * ONE AT A TIME. All four devices declare resource_group: laptop-cpu. They are one
+#   i7-12700H wearing four device ids, and running them concurrently would measure
+#   contention instead of overhead. The scheduler enforces this; see scheduler.py.
+# * FIXED THREADS. Four threads everywhere, so the quota levels are the only thing that
+#   varies between the constrained arms.
+#
+# Known limitation, stated here rather than discovered later: the "host" arm is a process
+# on a WSL2 Linux host, which is itself a virtual machine. That VM layer is present in all
+# four arms and therefore cancels out of every comparison here, but these are not numbers
+# from bare metal in the strict sense and must never be presented as such.
+#
+# Run it:
+#   mlsys run configs/containerization.yaml --concurrent --prometheus-port 9109
+#
+# Setup is in docker/README.md. It is four commands and none of them are optional.
+
+experiment: containerization-tax
+output_dir: runs/containerization-tax
+
+devices:
+  wsl-host:
+    kind: ssh
+    # WSL2's localhost relay forwards this most of the time and then, occasionally,
+    # stops, with sshd still listening inside the VM and nothing in any log. When that
+    # happens use the distro's own address instead: wsl -d Ubuntu --exec hostname -I.
+    # It is not the default here because it changes when the VM restarts.
+    host: 127.0.0.1
+    user: manu
+    identity_file: ~/.ssh/wsl_lab_key
+    python: python3
+    workdir: ~/.mlsyslab
+    dram_peak_GBs: 53.9
+    resource_group: laptop-cpu
+    llamacpp:
+      bin_dir: /home/manu/llama-bin
+      # Where this build's shared objects live on this machine. In the image they are on
+      # LD_LIBRARY_PATH already; here they sit next to the binaries and have to be named.
+      env:
+        LD_LIBRARY_PATH: /home/manu/llama-bin
+
+  k8s-unlimited:
+    kind: k8s
+    # Not "kubectl". The API server of a k3s inside WSL2 is not reachable from the
+    # Windows side, and --exec is load-bearing: without it wsl.exe hands the arguments to
+    # a login shell that re-parses them. K8sDevice.verify_transport checks this before
+    # the first measurement rather than letting it produce plausible numbers.
+    kubectl: ["wsl", "-d", "Ubuntu", "--exec", "k3s", "kubectl"]
+    namespace: mlsyslab
+    pod: mlsyslab-unlimited
+    image: docker.io/library/mlsyslab-agent:0.2.0
+    dram_peak_GBs: 53.9
+    resource_group: laptop-cpu
+    memory_request: 2Gi
+    memory_limit: 4Gi
+    host_mounts:
+      - host_path: /home/manu/models
+        mount_path: /models
+        read_only: true
+    llamacpp:
+      bin_dir: /usr/local/bin
+
+  k8s-cpu8:
+    kind: k8s
+    kubectl: ["wsl", "-d", "Ubuntu", "--exec", "k3s", "kubectl"]
+    namespace: mlsyslab
+    pod: mlsyslab-cpu8
+    image: docker.io/library/mlsyslab-agent:0.2.0
+    dram_peak_GBs: 53.9
+    resource_group: laptop-cpu
+    cpu_limit: "8"
+    # Requested as well as limited. Kubernetes copies limits into requests when requests
+    # are absent, which turns a ceiling into a reservation and made four small pods
+    # unschedulable on a 16 GB node. Requesting the CPU explicitly also fixes the pod's
+    # cpu.weight, so the quota is the only thing that varies between these arms.
+    cpu_request: "8"
+    memory_request: 2Gi
+    memory_limit: 4Gi
+    host_mounts:
+      - host_path: /home/manu/models
+        mount_path: /models
+        read_only: true
+    llamacpp:
+      bin_dir: /usr/local/bin
+
+  k8s-cpu4:
+    kind: k8s
+    kubectl: ["wsl", "-d", "Ubuntu", "--exec", "k3s", "kubectl"]
+    namespace: mlsyslab
+    pod: mlsyslab-cpu4
+    image: docker.io/library/mlsyslab-agent:0.2.0
+    dram_peak_GBs: 53.9
+    resource_group: laptop-cpu
+    cpu_limit: "4"
+    # Requested as well as limited. Kubernetes copies limits into requests when requests
+    # are absent, which turns a ceiling into a reservation and made four small pods
+    # unschedulable on a 16 GB node. Requesting the CPU explicitly also fixes the pod's
+    # cpu.weight, so the quota is the only thing that varies between these arms.
+    cpu_request: "4"
+    memory_request: 2Gi
+    memory_limit: 4Gi
+    host_mounts:
+      - host_path: /home/manu/models
+        mount_path: /models
+        read_only: true
+    llamacpp:
+      bin_dir: /usr/local/bin
+
+  k8s-cpu2:
+    kind: k8s
+    kubectl: ["wsl", "-d", "Ubuntu", "--exec", "k3s", "kubectl"]
+    namespace: mlsyslab
+    pod: mlsyslab-cpu2
+    image: docker.io/library/mlsyslab-agent:0.2.0
+    dram_peak_GBs: 53.9
+    resource_group: laptop-cpu
+    cpu_limit: "2"
+    # Requested as well as limited. Kubernetes copies limits into requests when requests
+    # are absent, which turns a ceiling into a reservation and made four small pods
+    # unschedulable on a 16 GB node. Requesting the CPU explicitly also fixes the pod's
+    # cpu.weight, so the quota is the only thing that varies between these arms.
+    cpu_request: "2"
+    memory_request: 2Gi
+    memory_limit: 4Gi
+    host_mounts:
+      - host_path: /home/manu/models
+        mount_path: /models
+        read_only: true
+    llamacpp:
+      bin_dir: /usr/local/bin
+
+# Four quantisations of one model, plus a larger model. Four formats because the second
+# question this experiment asks is whether containerisation changes the *ranking* of the
+# things being compared, and a ranking needs more than two things in it.
+models:
+  qwen0.5b-fp16:
+    quantization: F16
+    params: 0.5
+    paths:
+      wsl-host: /home/manu/models/qwen0.5b-fp16.gguf
+      k8s-unlimited: /models/qwen0.5b-fp16.gguf
+      k8s-cpu8: /models/qwen0.5b-fp16.gguf
+      k8s-cpu4: /models/qwen0.5b-fp16.gguf
+      k8s-cpu2: /models/qwen0.5b-fp16.gguf
+
+  qwen0.5b-q8:
+    quantization: Q8_0
+    params: 0.5
+    paths:
+      wsl-host: /home/manu/models/qwen0.5b-q8.gguf
+      k8s-unlimited: /models/qwen0.5b-q8.gguf
+      k8s-cpu8: /models/qwen0.5b-q8.gguf
+      k8s-cpu4: /models/qwen0.5b-q8.gguf
+      k8s-cpu2: /models/qwen0.5b-q8.gguf
+
+  qwen0.5b-q4km:
+    quantization: Q4_K_M
+    params: 0.5
+    paths:
+      wsl-host: /home/manu/models/qwen0.5b-q4km.gguf
+      k8s-unlimited: /models/qwen0.5b-q4km.gguf
+      k8s-cpu8: /models/qwen0.5b-q4km.gguf
+      k8s-cpu4: /models/qwen0.5b-q4km.gguf
+      k8s-cpu2: /models/qwen0.5b-q4km.gguf
+
+  qwen0.5b-q2k:
+    quantization: Q2_K
+    params: 0.5
+    paths:
+      wsl-host: /home/manu/models/qwen0.5b-q2k.gguf
+      k8s-unlimited: /models/qwen0.5b-q2k.gguf
+      k8s-cpu8: /models/qwen0.5b-q2k.gguf
+      k8s-cpu4: /models/qwen0.5b-q2k.gguf
+      k8s-cpu2: /models/qwen0.5b-q2k.gguf
+
+  qwen1.5b-q4km:
+    quantization: Q4_K_M
+    params: 1.5
+    paths:
+      wsl-host: /home/manu/models/qwen1.5b-q4km.gguf
+      k8s-unlimited: /models/qwen1.5b-q4km.gguf
+      k8s-cpu8: /models/qwen1.5b-q4km.gguf
+      k8s-cpu4: /models/qwen1.5b-q4km.gguf
+      k8s-cpu2: /models/qwen1.5b-q4km.gguf
+
+defaults:
+  backend: llamacpp
+  # llama-bench's own repetitions, so each point carries a spread rather than a single
+  # sample. Ten rather than five because the first attempt at this measured run-to-run
+  # spreads of 13 to 25 percent, which is wider than every effect it was trying to
+  # resolve. Ten repetitions cuts the standard error of each mean by about a third, and
+  # the analysis refuses to call a difference real unless it clears that.
+  repetitions: 10
+
+matrix:
+  - devices: [wsl-host, k8s-unlimited, k8s-cpu8, k8s-cpu4, k8s-cpu2]
+    models: [qwen0.5b-fp16, qwen0.5b-q8, qwen0.5b-q4km, qwen0.5b-q2k, qwen1.5b-q4km]
+    modes: [throughput]
+    threads: [4]
+    prompt_tokens: [128]
+    output_tokens: [64]

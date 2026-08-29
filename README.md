@@ -88,10 +88,12 @@ Anything a platform cannot measure is reported as absent, never as zero.
 | Raspberry Pi 5 (2 GB, Cortex-A76) | SSH agent | PMIC per-rail power, throttle bits, DVFS control |
 | i7-12700H laptop (Windows) | local agent | 20-thread sweeps, up to 7B models |
 | RTX 3050 (same laptop) | ONNX Runtime DirectML | modeled as its own device; at batch 1 the GPU loses to the CPU (12.3 ms vs 3.0 ms, dispatch overhead), at batch 64 it wins 29x (9,885 vs 338 inf/s), and both facts come out of the same config file |
+| Kubernetes pod (k3s) | `kubectl exec` agent | the same laptop CPU, reached through a container; effective cgroup ceilings are read from inside the pod and travel in the record |
 
 A new machine is a config block, not code: `host`, an SSH key, and the paths to its
 models. A new accelerator is a device entry pointing at an interpreter whose ONNX
-Runtime carries the right execution provider.
+Runtime carries the right execution provider. A container is a device entry with an
+image and a `kubectl`.
 
 ## Design
 
@@ -99,8 +101,15 @@ Runtime carries the right execution provider.
 config.yaml ──> RunSpecs ──> Device ──> agent (on the device) ──> RunRecord ──> analysis
                              │
                              ├── LocalDevice   (this machine, agent as subprocess)
-                             └── SSHDevice     (agent pushed over SSH, runs remotely)
+                             ├── SSHDevice     (agent pushed over SSH, runs remotely)
+                             └── K8sDevice     (agent streamed into a pod, runs there)
 ```
+
+The Kubernetes device is a third implementation of an interface that already existed:
+`_invoke_agent`, `push`, `pull`, `resolve`, `exists`, `package_root`, `python_executable`.
+No backend changed to accommodate it, and a test fails the build if any backend so much
+as mentions a container. That is the design claim, and it is checked rather than
+asserted.
 
 * **The agent runs on the device under test**, so the benchmark and the telemetry
   sampler are colocated; nothing crosses the network inside a measurement window.
@@ -113,6 +122,14 @@ config.yaml ──> RunSpecs ──> Device ──> agent (on the device) ──
   too, with the error and the raw output preserved.
 * **Capability model**: each device reports what it can measure (`mlsys probe`), and
   sweeps degrade gracefully rather than failing on a machine without, say, a PMIC.
+* **A record carries what constrained it.** `placement` holds the pod, node, image
+  digest, QoS class and the effective cgroup ceilings, read from inside the container
+  rather than copied from the config. A throughput number taken under a CPU quota is not
+  comparable to one taken without, and the record has to say so on its own.
+* **Concurrent when asked** (`--concurrent`), with per-device limits, resource groups for
+  devices that are secretly the same machine, retries only for transport failures, a
+  circuit breaker per device, and a written record of everything that was retried. See
+  [docs/DISTRIBUTED.md](docs/DISTRIBUTED.md).
 
 ## Install
 
@@ -230,7 +247,116 @@ mlsys membw --device pi5 --config configs/lab.yaml
 
 mlsys compare runs/before runs/after --metric decode_tps
     # same workloads in two result sets, side by side with the ratio
+
+mlsys export runs/my-sweep
+    # the same records as Prometheus metrics, once to stdout; --serve to hold
+    # a /metrics endpoint open instead
 ```
+
+## Running one sweep across several machines at once
+
+Add `--concurrent` and the matrix is scheduled across every device in it, subject to
+what each device says it can take:
+
+```yaml
+devices:
+  laptop:  { max_concurrency: 4 }
+  pi5:     { max_concurrency: 1 }    # the default, and not negotiable on a 2 GB board
+  k8s-cpu4:
+    image: mlsyslab-agent:0.2.0
+    kubectl: ["wsl", "-d", "Ubuntu", "--exec", "k3s", "kubectl"]
+    cpu_limit: "4"
+    resource_group: laptop-cpu       # this pod and the laptop are one CPU
+```
+
+```
+mlsys run configs/lab.yaml --concurrent --prometheus-port 9109
+```
+
+What that buys, and what it deliberately refuses to do:
+
+* **Per-device limits**, because "the laptop can take four of these and the Pi can take
+  exactly one" is a property of the hardware.
+* **Resource groups**, for devices that are secretly the same machine. A host and the
+  pods scheduled onto it are several device ids and one CPU; running them at once would
+  measure contention rather than anything useful. Grouped devices hold one job between
+  them and take turns.
+* **Only transport failures are retried.** A dropped SSH connection is worth another go.
+  A model that will not fit in RAM is a *result*, and retrying it would bury the finding.
+* **Every retry is written down**, in `retries.jsonl` and in the record's own warnings.
+  A benchmark that silently retries is one you cannot trust.
+* **A circuit breaker per device**, with a half-open recovery probe, so a tailnet that
+  drops for two minutes is a delay rather than a lost night.
+* **Work is not moved between devices.** In a hardware benchmark the device *is* the
+  independent variable, so a Pi point run on the laptop is a different experiment, not a
+  repaired one. Points on a machine that never came back are written as failed records
+  saying they were never measured, so the hole is visible and a resumed sweep picks it
+  up. Failover happens only where a config declares two devices interchangeable, and the
+  moved run is tagged.
+* **A clock check first**, because cross-device timing is only as good as the worst clock
+  in the set. The offset and its uncertainty are recorded whether or not they are
+  alarming.
+
+`configs/cluster.yaml` is the worked example: a Windows laptop, a 2 GB Raspberry Pi 5 over
+SSH on a tailnet, and a Kubernetes pod, from one file. The Pi overlaps the other two; the
+laptop and the pod take turns because they are one CPU. The records and the schedule are
+in [results/cluster/](results/cluster/), including the run where the pod had been deleted
+before the sweep started, was correctly reported as a transport failure rather than a
+configuration error, and completed on the retry.
+
+[docs/DISTRIBUTED.md](docs/DISTRIBUTED.md) has the design and the failure modes.
+
+## A result this produced: what containerisation costs a benchmark
+
+The Kubernetes support exists to answer a question, not to be a feature. Most people
+benchmarking models today are doing it in Kubernetes, and almost nobody has measured what
+the container is doing to their numbers.
+
+Five arms on one i7-12700H, four threads throughout: a host process, and pods with no CPU
+quota, an 8-core quota, a 4-core quota and a 2-core quota. Same binary in every arm,
+extracted from the same image the pods run. Same model file, mounted from the node
+read-only, so every arm reads the same inode. One arm at a time, taking turns, because
+they are one CPU wearing five device ids. Two independent passes of the whole matrix.
+
+| | vs an uncontainerised process on the same machine |
+|---|---|
+| pod, no CPU quota | +2.3% mean, 0 of 5 points resolvable |
+| pod, quota 8 cores | +2.2% mean, 0 of 5 resolvable |
+| pod, quota 4 cores | +3.1% mean, 1 of 5 resolvable |
+| pod, quota 2 cores | **-64.1% mean, 5 of 5 resolvable** |
+
+**This measurement cannot find a cost of containerisation**, which is not the same claim
+as proving there is none: fourteen of fifteen host-versus-pod comparisons sit inside the
+run-to-run noise. What does cost you, and costs you 64%, is a CPU quota *below* the thread
+count the benchmark asks for. That is not the container's fault. It is asking for more
+parallelism than the cgroup will grant, and no amount of container tuning fixes it.
+
+**The ranking of the five model and quantisation combinations is identical in all five
+arms**, including the one losing most of its throughput. The tax is close enough to
+multiplicative that relative comparisons survive it, which is the practical answer for
+anyone choosing between quantisation formats by benchmarking inside a pod.
+
+Full method, controls, the two-pass drift check and the limitations are in
+[results/containerization/REPORT.md](results/containerization/REPORT.md), with the 50
+records beside it. The honest headline limitation: the host arm is a process on a WSL2
+Linux host, which is itself a virtual machine, and that layer is present in every arm.
+These are not bare-metal numbers.
+
+## Watching a sweep
+
+```
+mlsys run configs/lab.yaml --concurrent --prometheus-port 9109
+mlsys export runs/lab --serve          # or a finished directory, same metrics
+```
+
+Point Prometheus at `:9109/metrics` and import `grafana/mlsyslab-sweep.json`: devices up
+or down, clock offsets, effective CPU quotas, runs finished and in flight per device, and
+throughput, power and temperature per point as each completes.
+
+The records on disk remain the result. The exporter is never in the write path, so a
+scrape that never happens costs a graph and not a measurement, and it adds no dependency:
+the exposition format is written by hand precisely so that the package a 2 GB board has
+to run does not grow a client library.
 
 ## Measurement methodology
 
@@ -255,14 +381,23 @@ src/mlsyslab/
   runner.py          resumable execution, atomic writes
   agent.py           the on-device payload (stdlib only)
   bench_onnx.py      the on-device ONNX Runtime benchmark
-  devices/           local and SSH devices, capability model
+  scheduler.py       concurrent sweeps, per-device limits, partial failure
+  prometheus.py      /metrics for watching a sweep (standard library only)
+  devices/           local, SSH and Kubernetes devices, capability model
   backends/          llamacpp (bench + server) and onnxruntime
   telemetry/         power (PMIC/RAPL), thermal, CPU, DVFS
   analysis/          dataset, tables, figures, REPORT.md
 configs/             experiment definitions
-tools/               result backfill converters
+docker/              the agent image: python, tar and llama.cpp, pinned by digest
+k8s/                 namespace and pod manifests, generated from the device
+k8s/cloud/           the cloud GPU node: manifests, runbook, teardown
+grafana/             a dashboard for a running sweep, checked in as JSON
+tools/               result backfill converters, manifest generator, study analyses
 results/paper12/     real measurements from the IEEE TC submission
-tests/               113 hardware-free tests (recorded fixtures)
+results/containerization/  what containerisation costs a benchmark, and whether it
+                     changes the ranking
+tests/               hardware-free tests, including a fake kubectl so the Kubernetes
+                     device is covered with no cluster
 ```
 
 ## Documentation
@@ -271,6 +406,11 @@ tests/               113 hardware-free tests (recorded fixtures)
   line: the record schema, the device and backend contracts, and the analysis entry
   points, with the stability of each one stated.
 * [docs/METHOD.md](docs/METHOD.md) for the measurement rules and why each exists.
+* [docs/DISTRIBUTED.md](docs/DISTRIBUTED.md) for running one sweep across several
+  machines: what is scheduled, what is retried and what deliberately is not, how partial
+  failure is handled, and how to watch it.
+* [docker/README.md](docker/README.md) for building the agent image and standing up
+  k3s, including the three things that bite on Windows and WSL2.
 * [docs/memo-decode-cliff.md](docs/memo-decode-cliff.md) for a worked study built with
   the framework, from config to conclusion.
 * `mlsys <command> --help` for the command line, and `results/README.md` for what is in
@@ -283,11 +423,19 @@ pip install -e ".[dev]"
 python -m pytest -q
 ```
 
-A hundred and thirteen tests, no hardware required. Recorded `llama-bench` output and canned agent
+No hardware required. Recorded `llama-bench` output and canned agent
 results stand in for devices, so the suite runs the same on a laptop and in CI, where it
 runs on Linux, macOS and Windows against Python 3.9, 3.12 and 3.13, plus a job that
 installs without numpy, matplotlib or PyYAML and checks the measurement core still
 imports and runs.
+
+The Kubernetes device is covered without a cluster: `tests/fake_kubectl.py` answers from a
+directory, implementing exactly the calls the device makes and exiting non-zero on
+anything else, which makes it a check on the device's vocabulary as well as a stand-in for
+a cluster. `tests/test_device_contract.py` then points one suite at every device kind, so
+"a pod is a device in the same sense a laptop is" is a test rather than a claim; it picks
+up real remote targets when `MLSYSLAB_TEST_K8S` or `MLSYSLAB_TEST_SSH` are set and skips
+them otherwise.
 
 ## Getting help, and contributing
 

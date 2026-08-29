@@ -1,0 +1,97 @@
+# One cloud GPU node, joined to the home lab cluster, running the same sweep.
+#
+# NOT YET EXECUTED. See k8s/cloud/RUNBOOK.md, which explains what has to happen first and
+# in what order. The billing alert goes up before the instance, and the instance is
+# destroyed in the session that created it.
+#
+# What this config is for, beyond the GPU numbers: it is the proof that "device" in this
+# framework means what it claims to mean. A rented A10 in a datacentre, a Raspberry Pi on
+# a tailnet and a pod on a laptop are three entries in the same list, driven by the same
+# backend code, producing records with the same schema. If adding this file had required
+# a change anywhere in backends/, the abstraction would have been decorative.
+#
+# Note the resource groups. The laptop's devices share one CPU and take turns. The cloud
+# node is a different machine, so it has its own group and runs concurrently with them.
+# That distinction is the reason the scheduler models groups at all rather than one
+# global concurrency number.
+
+experiment: cloud-gpu
+output_dir: runs/cloud-gpu
+
+devices:
+  cloud-gpu:
+    kind: k8s
+    kubectl: ["wsl", "-d", "Ubuntu", "--exec", "k3s", "kubectl"]
+    namespace: mlsyslab
+    pod: mlsyslab-gpu
+    image: docker.io/library/mlsyslab-agent:0.2.0
+    create_pod: false          # k8s/cloud/pod-gpu-agent.yaml owns this pod's lifecycle
+    accelerator: nvidia-l4
+    # A different machine, so it does not take turns with the laptop.
+    resource_group: cloud-node
+    max_concurrency: 1
+    # A spot instance can vanish mid-sweep. That is the failure the scheduler was built
+    # for: the breaker opens, the remaining points are recorded as holes with a reason,
+    # and re-running after a replacement instance joins picks up exactly what is missing.
+    max_transport_failures: 2
+    recovery_after_s: 120
+    llamacpp:
+      bin_dir: /usr/local/bin
+
+  laptop-gpu:
+    # The RTX 3050 in the laptop, as a comparison point that costs nothing. 4 GB of VRAM
+    # against 24, on the same workloads, is the interesting half of this.
+    kind: local
+    python: C:/llmpc/venv311dml/Scripts/python.exe
+    accelerator: rtx-3050-laptop
+    resource_group: laptop-cpu
+    onnxruntime:
+      providers: [DmlExecutionProvider]
+
+models:
+  qwen0.5b-q4km:
+    quantization: Q4_K_M
+    params: 0.5
+    paths:
+      cloud-gpu: /models/qwen0.5b-q4km.gguf
+
+  qwen1.5b-q4km:
+    quantization: Q4_K_M
+    params: 1.5
+    paths:
+      cloud-gpu: /models/qwen1.5b-q4km.gguf
+
+  qwen7b-q4km:
+    quantization: Q4_K_M
+    params: 7.0
+    paths:
+      cloud-gpu: /models/qwen7b-q4km.gguf
+
+defaults:
+  backend: llamacpp
+  repetitions: 5
+
+matrix:
+  # Throughput across three model sizes. The 7B is here because it is the one that does
+  # not fit in the laptop's 4 GB and does fit in the rented card, which is the whole
+  # reason anyone rents one.
+  - devices: [cloud-gpu]
+    models: [qwen0.5b-q4km, qwen1.5b-q4km, qwen7b-q4km]
+    modes: [throughput]
+    threads: [8]
+    prompt_tokens: [128]
+    output_tokens: [128]
+    # Energy on a rented GPU comes from NVML's monotonic counter where the driver exposes
+    # it, and an integral of nvidia-smi samples where it does not. The record says which,
+    # because they are not the same measurement.
+    sample_power: true
+    sample_hz: 10
+
+  # Latency, which is the number a user feels and llama-bench cannot answer.
+  - devices: [cloud-gpu]
+    models: [qwen1.5b-q4km]
+    modes: [latency]
+    threads: [8]
+    prompt_tokens: [128]
+    output_tokens: [128]
+    sample_power: true

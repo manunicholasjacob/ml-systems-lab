@@ -177,6 +177,82 @@ Two behaviours worth knowing before you call `run`:
 * **A failure does not stop the campaign.** It is written as a record with `status` set to
   `failed`, and the run continues.
 
+## Running a sweep across several devices at once
+
+`Runner.run` is sequential and stays that way. The concurrent path is a separate object
+driving the same `Runner`, so single-device behaviour is unchanged and still tested.
+
+```python
+from mlsyslab.config import Config
+from mlsyslab.runner import Runner
+from mlsyslab.scheduler import ConcurrentSweep, DevicePolicy, RetryPolicy
+
+config = Config(experiment="demo", output_dir="runs/demo",
+                devices={"laptop": {"max_concurrency": 4},
+                         "pi5": {"max_concurrency": 1},
+                         "pod": {"resource_group": "laptop-cpu"}})
+sweep = ConcurrentSweep(
+    Runner(config),
+    retry=RetryPolicy(max_attempts=3, backoff_s=5.0, max_backoff_s=120.0),
+)
+print(sorted(sweep.policies))
+print(sweep.policies["pi5"].max_concurrency)      # 1, the default
+print(sweep.policies["pod"].group)                 # laptop-cpu
+```
+
+`sweep.run(specs)` returns a `SweepResult` with `records`, `summary`, `retries` and
+`clock_offsets`, and writes `schedule.json` and `retries.jsonl` next to the records.
+
+Policies come from the device config, or can be passed directly:
+
+```python
+from mlsyslab.scheduler import DevicePolicy
+
+policy = DevicePolicy.from_config("pi5", {"max_concurrency": 1,
+                                          "max_transport_failures": 3,
+                                          "recovery_after_s": 180,
+                                          "failover_to": ["pi5-spare"]})
+print(policy.max_concurrency, policy.failover_to)
+```
+
+The one thing to understand before using it: only *transport* failures are retried.
+`Runner.attempt(spec)` returns an `Attempt` carrying both the record and why it failed,
+and a measurement that came back saying no is data, not something to try again.
+
+```python
+from mlsyslab.runner import Attempt
+from mlsyslab.schema import RunRecord
+
+print(Attempt(RunRecord(), "transport").retryable)     # True
+print(Attempt(RunRecord(), "measurement").retryable)   # False
+```
+
+## Publishing metrics while a sweep runs
+
+```python
+from mlsyslab.prometheus import Registry, Exporter, chain
+
+registry = Registry(experiment="demo")
+observer = registry.observer()          # pass as on_event, or chain() it with a reporter
+with Exporter(registry, port=0) as exporter:
+    print(exporter.url.endswith("/metrics"))
+```
+
+`chain(console_reporter(), registry.observer())` sends the same event stream to both. A
+finished directory can be projected without running anything:
+
+```python
+from mlsyslab.prometheus import from_directory
+
+registry = from_directory("results/pi5-campaign")
+text = registry.render()
+print("mlsyslab_decode_tokens_per_second" in text)
+```
+
+The registry is a view, never a source. It is not in the write path, so an exporter that
+dies costs a graph rather than a measurement, and it adds no dependency: the exposition
+format is written by hand so the package a 2 GB board runs does not grow a client library.
+
 ## Adding a backend
 
 Three methods against the contract in `backends/base.py`.
@@ -208,6 +284,26 @@ repository has one, and that is why the suite needs no devices.
 Subclass `Device` from `devices/base.py` and implement `_invoke_agent`, `push`, `pull`,
 `resolve`, `exists` and `package_root`. The base class handles the agent protocol,
 capability probing and binary discovery.
+
+`K8sDevice` is the worked example of a third kind: a container in a Kubernetes pod is a
+device in exactly the same sense a laptop is, and no backend changed to accommodate it. A
+test fails the build if any backend so much as mentions a container, because the moment
+one does, the abstraction has stopped being real.
+
+Two obligations are easy to miss and both cost a wrong answer rather than an error:
+
+* **`exists` must raise, not return False, when it could not look.** "The file is not
+  there" and "I could not check" are different answers. Returning False for the second
+  turns a dropped connection during backend discovery into "llama-bench not found", which
+  is classified as a configuration error and therefore never retried.
+* **Report what constrained the run.** Override `device_info()` to add a `placement`
+  block if the device runs somewhere with limits: the schema carries it, the analysis
+  layer exposes `cpu_quota_cores` and `runtime` as columns, and a throughput number taken
+  under a CPU quota is not comparable to one taken without.
+
+Override `first_existing(paths)` if the device can answer "which of these exists" in one
+round trip. The default loops through `exists`, which for backend discovery is sixteen
+connections per run.
 
 The one hard constraint: the agent payload has to reach the device as source and run under
 its own Python with no third-party imports. That is what keeps a 2 GB single-board computer

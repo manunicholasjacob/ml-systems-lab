@@ -1,0 +1,129 @@
+{
+  "run_id": "9f45e668ab5d",
+  "experiment": "containerization-tax",
+  "schema_version": "1.0",
+  "lab_version": "0.2.0",
+  "timestamp_utc": "2026-08-29T03:37:23Z",
+  "duration_s": 20.668857456000296,
+  "status": "ok",
+  "warnings": [],
+  "tags": [],
+  "device": {
+    "device_id": "wsl-host",
+    "kind": "ssh",
+    "os": "Linux",
+    "os_release": "6.18.33.2-microsoft-standard-WSL2",
+    "distro": "Ubuntu 26.04 LTS",
+    "kernel": "6.18.33.2-microsoft-standard-WSL2",
+    "machine": "x86_64",
+    "cpu": "12th Gen Intel(R) Core(TM) i7-12700H",
+    "cpu_flags": [
+      "avx",
+      "avx2",
+      "avx_vnni",
+      "f16c",
+      "fma",
+      "sse4_2"
+    ],
+    "logical_cores": 20,
+    "physical_cores": 10,
+    "ram_bytes": 16595456000,
+    "swap_bytes": 4294967296,
+    "dram_peak_GBs": 53.9,
+    "gpus": [],
+    "python": "3.14.4",
+    "compiler": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+    "libc": "glibc 2.43",
+    "capabilities": {
+      "temperature": false,
+      "throttle_flags": false,
+      "cpu_freq": false,
+      "pmic": false,
+      "rapl": false,
+      "nvml": false,
+      "nvidia_smi": false,
+      "cpu_utilisation": true,
+      "peak_rss": true,
+      "dvfs_read": false,
+      "dvfs_write": false
+    },
+    "placement": {}
+  },
+  "backend": {
+    "name": "llamacpp",
+    "version": "10680",
+    "build": "d7bd3bfca",
+    "execution_provider": "CPU",
+    "library_versions": {}
+  },
+  "workload": {
+    "model": "qwen0.5b-fp16",
+    "model_path": "/home/manu/models/qwen0.5b-fp16.gguf",
+    "weight_bytes": 1260477952,
+    "params": 0.630167424,
+    "quantization": "F16",
+    "architecture": "qwen2 1B F16",
+    "prompt_tokens": 128,
+    "output_tokens": 64
+  },
+  "knobs": {
+    "threads": 4,
+    "repetitions": 10,
+    "extra": {}
+  },
+  "metrics": {
+    "prefill_tps": 272.875855,
+    "decode_tps": 42.363341,
+    "decode_bw_GBs": 53.398057303557636,
+    "bw_utilization_pct": 99.06875195465238,
+    "stdev_pct": 7.572488595592306,
+    "extra": {}
+  },
+  "telemetry": {
+    "cpu_util_pct_mean": 24.155319050053446,
+    "cpu_util_pct_per_core": [
+      48.5,
+      3.9,
+      65.4,
+      33.0,
+      1.8,
+      1.0,
+      36.9,
+      63.3,
+      1.2,
+      1.4,
+      32.4,
+      65.9,
+      60.5,
+      38.1,
+      1.7,
+      0.8,
+      1.1,
+      0.6,
+      2.5,
+      3.6
+    ],
+    "freq_khz_mean": 2687999.0,
+    "freq_khz_min": 2687999,
+    "freq_khz_max": 2687999,
+    "sample_hz": 10.0,
+    "sample_count": 206
+  },
+  "raw": {
+    "stdout": "[\n  {\n    \"build_commit\": \"d7bd3bfca\",\n    \"build_number\": 10680,\n    \"cpu_info\": \"12th Gen Intel(R) Core(TM) i7-12700H\",\n    \"gpu_info\": \"\",\n    \"backends\": \"CPU\",\n    \"model_filename\": \"/home/manu/models/qwen0.5b-fp16.gguf\",\n    \"model_type\": \"qwen2 1B F16\",\n    \"model_size\": 1260477952,\n    \"model_n_params\": 630167424,\n    \"n_batch\": 2048,\n    \"n_ubatch\": 512,\n    \"n_threads\": 4,\n    \"cpu_mask\": \"0x0\",\n    \"cpu_strict\": false,\n    \"poll\": 50,\n    \"type_k\": \"f16\",\n    \"type_v\": \"f16\",\n    \"n_gpu_layers\": -1,\n    \"n_cpu_moe\": 0,\n    \"split_mode\": \"layer\",\n    \"main_gpu\": 0,\n    \"no_kv_offload\": false,\n    \"flash_attn\": -1,\n    \"devices\": \"auto\",\n    \"tensor_split\": \"0.00\",\n    \"tensor_buft_overrides\": \"none\",\n    \"load_mode\": \"auto\",\n    \"lazy_mode\": \"auto\",\n    \"embeddings\": false,\n    \"no_op_offload\": 0,\n    \"no_host\": false,\n    \"fit_target\": 0,\n    \"fit_min_ctx\": 0,\n    \"n_prompt\": 128,\n    \"n_gen\": 0,\n    \"n_depth\": 0,\n    \"test_time\": \"2026-08-29T03:37:02Z\",\n    \"avg_ns\": 471501004,\n    \"stddev_ns\": 35649836,\n    \"avg_ts\": 272.875855,\n    \"stddev_ts\": 20.663493,\n    \"samples_ns\": [ 478681662, 519094236, 525470690, 489249111, 491594468, 457009452, 439042968, 414759577, 443459510, 456648372 ],\n    \"samples_ts\": [ 267.401, 246.583, 243.591, 261.625, 260.377, 280.082, 291.543, 308.613, 288.64, 280.303 ]\n  },\n  {\n    \"build_commit\": \"d7bd3bfca\",\n    \"build_number\": 10680,\n    \"cpu_info\": \"12th Gen Intel(R) Core(TM) i7-12700H\",\n    \"gpu_info\": \"\",\n    \"backends\": \"CPU\",\n    \"model_filename\": \"/home/manu/models/qwen0.5b-fp16.gguf\",\n    \"model_type\": \"qwen2 1B F16\",\n    \"model_size\": 1260477952,\n    \"model_n_params\": 630167424,\n    \"n_batch\": 2048,\n    \"n_ubatch\": 512,\n    \"n_threads\": 4,\n    \"cpu_mask\": \"0x0\",\n    \"cpu_strict\": false,\n    \"poll\": 50,\n    \"type_k\": \"f16\",\n    \"type_v\": \"f16\",\n    \"n_gpu_layers\": -1,\n    \"n_cpu_moe\": 0,\n    \"split_mode\": \"layer\",\n    \"main_gpu\": 0,\n    \"no_kv_offload\": false,\n    \"flash_attn\": -1,\n    \"devices\": \"auto\",\n    \"tensor_split\": \"0.00\",\n    \"tensor_buft_overrides\": \"none\",\n    \"load_mode\": \"auto\",\n    \"lazy_mode\": \"auto\",\n    \"embeddings\": false,\n    \"no_op_offload\": 0,\n    \"no_host\": false,\n    \"fit_target\": 0,\n    \"fit_min_ctx\": 0,\n    \"n_prompt\": 0,\n    \"n_gen\": 64,\n    \"n_depth\": 0,\n    \"test_time\": \"2026-08-29T03:37:07Z\",\n    \"avg_ns\": 1511513807,\n    \"stddev_ns\": 36279962,\n    \"avg_ts\": 42.363341,\n    \"stddev_ts\": 1.004104,\n    \"samples_ns\": [ 1585296924, 1540353696, 1470010272, 1511383911, 1473801952, 1504177256, 1471388736, 1528548566, 1500153853, 1530022912 ],\n    \"samples_ts\": [ 40.371, 41.5489, 43.5371, 42.3453, 43.4251, 42.5482, 43.4963, 41.8698, 42.6623, 41.8294 ]\n  }\n]\n",
+    "memory_before": {
+      "MemFree": 8335634432,
+      "MemAvailable": 14528995328,
+      "SwapTotal": 4294967296,
+      "SwapFree": 4294967296,
+      "SwapUsed": 0
+    },
+    "memory_after": {
+      "MemFree": 8407736320,
+      "MemAvailable": 14601097216,
+      "SwapTotal": 4294967296,
+      "SwapFree": 4294967296,
+      "SwapUsed": 0
+    }
+  }
+}

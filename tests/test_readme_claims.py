@@ -80,3 +80,63 @@ def test_the_record_count_the_readme_quotes_is_right():
         on_disk = len(Dataset.from_directory(
             os.path.join(REPO, "results", directory), include_failed=True))
         assert int(stated.group(1)) == on_disk, (directory, stated.group(1), on_disk)
+
+
+# ------------------------------------------------- the containerisation study's numbers
+
+def _containerization_summary():
+    import json
+
+    path = os.path.join(REPO, "results", "containerization", "summary.json")
+    if not os.path.exists(path):
+        pytest.skip("results/containerization has not been generated")
+    with open(path, encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def test_the_readme_containerisation_table_matches_the_records():
+    """Every percentage in that table is recomputed from the records that produced it."""
+    summary = _containerization_summary()
+    readme = _read("README.md")
+    labels = {"pod, no CPU quota": "k8s-unlimited",
+              "pod, quota 8 cores": "k8s-cpu8",
+              "pod, quota 4 cores": "k8s-cpu4",
+              "pod, quota 2 cores": "k8s-cpu2"}
+
+    checked = 0
+    for label, arm in labels.items():
+        row = re.search(r"\|\s*(?:\*\*)?" + re.escape(label)
+                        + r"(?:\*\*)?\s*\|\s*\*{0,2}([+-][\d.]+)% mean, (\d+) of (\d+)",
+                        readme)
+        assert row, f"README no longer states a figure for {label}"
+        stated_mean = float(row.group(1))
+        stated_resolved = int(row.group(2))
+        stated_total = int(row.group(3))
+
+        actual_mean = summary["overhead_pct_vs_host"][arm]
+        actual_resolved, actual_total = summary["points_resolved_vs_total"][arm]
+        assert abs(stated_mean - actual_mean) < 0.05, (label, stated_mean, actual_mean)
+        assert (stated_resolved, stated_total) == (actual_resolved, actual_total), label
+        checked += 1
+    assert checked == 4
+
+
+def test_the_readme_ranking_claim_is_what_the_records_say():
+    summary = _containerization_summary()
+    readme = _read("README.md")
+    if summary["arms_that_reordered"]:
+        assert "ranking of the five model and quantisation combinations is identical" \
+            not in readme, "the README claims a preserved ranking the records contradict"
+    else:
+        assert "identical in all five" in readme
+        # And no arm may even appear to reorder without the README saying so.
+        assert not summary["arms_whose_order_differed_within_noise"] or \
+            "within noise" in readme
+
+
+def test_the_study_carries_both_passes_and_one_image_digest():
+    summary = _containerization_summary()
+    assert summary["passes"] == [1, 2], "the drift control needs two independent passes"
+    assert summary["n_records"] == 50
+    assert len(summary["image_ids"]) == 1, (
+        "more than one image ran; the arms are not comparable")

@@ -1,0 +1,96 @@
+{
+  "mode": "concurrent",
+  "requested": 25,
+  "skipped_already_done": 0,
+  "executed": 25,
+  "ok": 25,
+  "failed": 0,
+  "elapsed_s": 726.6,
+  "by_device": {
+    "k8s-cpu2": {
+      "ok": 5,
+      "failed": 0
+    },
+    "k8s-cpu4": {
+      "ok": 5,
+      "failed": 0
+    },
+    "k8s-cpu8": {
+      "ok": 5,
+      "failed": 0
+    },
+    "k8s-unlimited": {
+      "ok": 5,
+      "failed": 0
+    },
+    "wsl-host": {
+      "ok": 5,
+      "failed": 0
+    }
+  },
+  "concurrency": {
+    "k8s-cpu2": 1,
+    "k8s-cpu4": 1,
+    "k8s-cpu8": 1,
+    "k8s-unlimited": 1,
+    "wsl-host": 1
+  },
+  "resource_groups": {
+    "laptop-cpu": {
+      "limit": 1,
+      "devices": [
+        "k8s-cpu2",
+        "k8s-cpu4",
+        "k8s-cpu8",
+        "k8s-unlimited",
+        "wsl-host"
+      ]
+    }
+  },
+  "retry_policy": {
+    "max_attempts": 3,
+    "backoff_s": 5.0,
+    "backoff_factor": 2.0,
+    "max_backoff_s": 120.0,
+    "retried_only": "transport failures"
+  },
+  "transport_failures": 0,
+  "breakers": {},
+  "clock_offsets": {
+    "k8s-cpu2": {
+      "status": "ok",
+      "offset_s": 2.214,
+      "round_trip_s": 4.473,
+      "agent_runtime_s": 0.005,
+      "uncertainty_s": 2.236
+    },
+    "k8s-cpu4": {
+      "status": "ok",
+      "offset_s": 2.856,
+      "round_trip_s": 5.759,
+      "agent_runtime_s": 0.005,
+      "uncertainty_s": 2.879
+    },
+    "k8s-cpu8": {
+      "status": "ok",
+      "offset_s": 2.163,
+      "round_trip_s": 4.373,
+      "agent_runtime_s": 0.005,
+      "uncertainty_s": 2.186
+    },
+    "k8s-unlimited": {
+      "status": "ok",
+      "offset_s": 2.239,
+      "round_trip_s": 4.524,
+      "agent_runtime_s": 0.005,
+      "uncertainty_s": 2.261
+    },
+    "wsl-host": {
+      "status": "ok",
+      "offset_s": 1.928,
+      "round_trip_s": 3.885,
+      "agent_runtime_s": 0.006,
+      "uncertainty_s": 1.941
+    }
+  }
+}
