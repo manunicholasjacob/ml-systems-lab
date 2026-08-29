@@ -16,6 +16,57 @@ ends.
 
 ---
 
+## What is missing today, checked rather than assumed
+
+As of 29 August 2026, on this machine:
+
+| | state |
+|---|---|
+| Spending cap agreed | **no** |
+| OCI CLI | not installed; no `~/.oci/config` |
+| GCP CLI | installed, **no credentialed account**, no project set |
+| AWS / Azure CLI | not installed |
+| GPU service quota | unknown on both, and it is zero by default on a new tenancy |
+| Control plane reachable from a cloud node | **no, see below** |
+
+### The control plane is not reachable, and this is the one that would waste money
+
+The k3s server runs inside WSL2 on the laptop. The laptop is on the tailnet at
+`100.115.85.6`, but that address is *Windows*, and port 6443 is refused there because
+WSL does not forward it. Verified, not assumed:
+
+```
+6443 on the Windows tailnet IP: ConnectionRefusedError
+```
+
+So a GPU node running `k3s agent --server https://100.115.85.6:6443` cannot join, and you
+would find that out with the meter running. Fix it before creating anything, by giving
+the WSL side its own tailnet address:
+
+```bash
+# inside WSL Ubuntu
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up --hostname manuxps15-wsl
+tailscale ip -4                     # this is the address the GPU node joins
+```
+
+Then check from somewhere else on the tailnet, the Pi will do, that `6443` answers on it
+before you spend anything:
+
+```bash
+ssh pi5 'nc -vz <wsl-tailnet-ip> 6443'
+```
+
+The alternative topology, if that turns out to be awkward, is to run the k3s *server* on
+the cloud node and join the laptop to it as an agent. That inverts which machine has to
+be reachable, and the laptop can always reach outwards.
+
+### Budget the time in one sitting
+
+Instance creation, joining the cluster, installing the NVIDIA container toolkit and the
+device plugin, one sweep, and teardown is 60 to 90 minutes. The instance is destroyed in
+the session that created it, so do not start this with 20 minutes free.
+
 ## 0. Agree the cap first
 
 Fill this in, out loud, before anything is created:
