@@ -1,0 +1,395 @@
+{
+  "__comment": "ml-systems-lab sweep dashboard. Import into Grafana and point it at a Prometheus datasource scraping `mlsys run --prometheus-port 9109` or `mlsys export --serve`. This dashboard is for WATCHING a sweep. The published numbers come from the run records in runs/<experiment>/, never from here: Prometheus keeps a rolling window and rounds on the wire, and the records do neither.",
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {"type": "grafana", "uid": "-- Grafana --"},
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "type": "row",
+      "title": "Are the machines up?",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "id": 100,
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "stat",
+      "title": "Devices in service",
+      "description": "0 means the scheduler has opened that device's circuit breaker after consecutive transport failures. Points queued for it are being recorded as holes, not measured.",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 5, "w": 6, "x": 0, "y": 1},
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {"type": "value", "options": {"0": {"text": "DOWN", "color": "red", "index": 0}}},
+            {"type": "value", "options": {"1": {"text": "up", "color": "green", "index": 1}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "mlsyslab_device_up{experiment=~\"$experiment\"}",
+          "legendFormat": "{{device}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Clock offset vs host",
+      "description": "Device clock minus host clock, measured before the sweep started. Cross-device timing comparisons are not safe while this is large. Recorded in schedule.json as well, with its uncertainty.",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 5, "w": 6, "x": 6, "y": 1},
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 3,
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 2}, {"color": "red", "value": 10}]}
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "abs(mlsyslab_device_clock_offset_seconds{experiment=~\"$experiment\"})",
+          "legendFormat": "{{device}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "CPU quota (cores)",
+      "description": "The effective cgroup quota read from inside each container. A device with no quota reports nothing here. Two throughput numbers taken under different quotas are not comparable, which is why this panel sits next to the throughput ones.",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 5, "w": 6, "x": 12, "y": 1},
+      "id": 3,
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}
+      },
+      "fieldConfig": {"defaults": {"decimals": 2, "unit": "none"}, "overrides": []},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "mlsyslab_device_cpu_quota_cores{experiment=~\"$experiment\"}",
+          "legendFormat": "{{device}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Transport failures and retries",
+      "description": "Non-zero here means numbers in this sweep may have come from a second or third attempt. Which ones is in retries.jsonl, and each affected record carries a warning saying so.",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 5, "w": 6, "x": 18, "y": 1},
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "value_and_name",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 1}]}
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "mlsyslab_device_transport_failures_total{experiment=~\"$experiment\"}",
+          "legendFormat": "{{device}} transport",
+          "refId": "A"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "mlsyslab_device_retries_total{experiment=~\"$experiment\"}",
+          "legendFormat": "{{device}} retries",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Progress",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 6},
+      "id": 101,
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Runs finished, by device and status",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 7, "w": 12, "x": 0, "y": 7},
+      "id": 5,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {"drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "stepAfter": true},
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["lastNotNull"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "mlsyslab_sweep_runs_total{experiment=~\"$experiment\"}",
+          "legendFormat": "{{device}} {{status}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "In flight and pending, by device",
+      "description": "In flight is capped by each device's max_concurrency. The 2 GB Pi is deliberately pinned at one.",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 7, "w": 12, "x": 12, "y": 7},
+      "id": 6,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {"drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "stepAfter": true},
+          "unit": "none",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["lastNotNull"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "mlsyslab_sweep_runs_inflight{experiment=~\"$experiment\"}",
+          "legendFormat": "{{device}} in flight",
+          "refId": "A"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "mlsyslab_sweep_runs_pending{experiment=~\"$experiment\"}",
+          "legendFormat": "{{device}} pending",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "What the last point on each device measured",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 14},
+      "id": 102,
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Decode throughput",
+      "description": "One series per (device, model, quant, threads, token shape). A point appears when its run finishes; this is not a continuous trace.",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 15},
+      "id": 7,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {"drawStyle": "points", "pointSize": 8, "lineWidth": 1, "showPoints": "always", "fillOpacity": 0},
+          "unit": "none",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "mlsyslab_decode_tokens_per_second{experiment=~\"$experiment\", device=~\"$device\"}",
+          "legendFormat": "{{device}} {{model}} {{quant}} t{{threads}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Prefill throughput",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 15},
+      "id": 8,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {"drawStyle": "points", "pointSize": 8, "lineWidth": 1, "showPoints": "always", "fillOpacity": 0},
+          "unit": "none",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "mlsyslab_prefill_tokens_per_second{experiment=~\"$experiment\", device=~\"$device\"}",
+          "legendFormat": "{{device}} {{model}} {{quant}} t{{threads}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Package power",
+      "description": "Mean over the measured window, from whichever instrument the device has. Absent where the device cannot read power at all, which is honest rather than zero.",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 23},
+      "id": 9,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {"drawStyle": "points", "pointSize": 8, "showPoints": "always", "fillOpacity": 0},
+          "unit": "watt",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "mlsyslab_power_watts{experiment=~\"$experiment\", device=~\"$device\"}",
+          "legendFormat": "{{device}} {{model}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Peak temperature",
+      "description": "Peak within the measured window. A run that throttled is not a failed run, it is a run whose number means something different, so watch this next to throughput.",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 23},
+      "id": 10,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {"drawStyle": "points", "pointSize": 8, "showPoints": "always", "fillOpacity": 0},
+          "unit": "celsius",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 70}, {"color": "red", "value": 80}]}
+        },
+        "overrides": []
+      },
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "mlsyslab_temperature_celsius{experiment=~\"$experiment\", device=~\"$device\"}",
+          "legendFormat": "{{device}} {{model}}",
+          "refId": "A"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "mlsyslab_run_throttled{experiment=~\"$experiment\", device=~\"$device\"} * 100",
+          "legendFormat": "{{device}} throttled (x100)",
+          "refId": "B",
+          "hide": true
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Energy per generated token",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 23},
+      "id": 11,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {"drawStyle": "points", "pointSize": 8, "showPoints": "always", "fillOpacity": 0},
+          "unit": "none",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "mlsyslab_energy_per_token_millijoules{experiment=~\"$experiment\", device=~\"$device\"}",
+          "legendFormat": "{{device}} {{model}} (mJ/token)",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": ["mlsyslab", "benchmark", "edge-ai"],
+  "templating": {
+    "list": [
+      {
+        "type": "datasource",
+        "name": "DS_PROMETHEUS",
+        "label": "Prometheus",
+        "query": "prometheus",
+        "current": {},
+        "hide": 0,
+        "refresh": 1
+      },
+      {
+        "type": "query",
+        "name": "experiment",
+        "label": "Experiment",
+        "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+        "query": "label_values(mlsyslab_sweep_runs_total, experiment)",
+        "includeAll": true,
+        "multi": true,
+        "current": {"text": "All", "value": "$__all"},
+        "refresh": 2,
+        "sort": 1
+      },
+      {
+        "type": "query",
+        "name": "device",
+        "label": "Device",
+        "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+        "query": "label_values(mlsyslab_decode_tokens_per_second{experiment=~\"$experiment\"}, device)",
+        "includeAll": true,
+        "multi": true,
+        "current": {"text": "All", "value": "$__all"},
+        "refresh": 2,
+        "sort": 1
+      }
+    ]
+  },
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {},
+  "timezone": "",
+  "title": "ml-systems-lab: sweep",
+  "uid": "mlsyslab-sweep",
+  "version": 1,
+  "weekStart": ""
+}

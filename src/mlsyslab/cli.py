@@ -2,7 +2,9 @@
 
     mlsys probe   --config configs/lab.yaml     what the machines are and can measure
     mlsys run     configs/laptop-smoke.yaml     execute a config, resumably
+    mlsys run     configs/cluster.yaml --concurrent   the same, across devices at once
     mlsys report  runs/laptop-smoke             tables from a results directory
+    mlsys export  runs/laptop-smoke             run records as Prometheus metrics
 
 ``run`` is the only command that touches hardware. ``probe`` is safe to run at any time
 and is the first thing to try when a config does not behave, because it prints the
@@ -101,11 +103,49 @@ def _cmd_run(args: argparse.Namespace) -> int:
         print("\ndry run, nothing executed")
         return 0
 
-    runner = Runner(config, output_dir=args.output, resume=not args.no_resume,
-                    on_event=console_reporter())
-    print(f"\nwriting to {runner.output_dir}\n")
-    records = runner.run(specs)
-    return 1 if any(not r.ok for r in records) else 0
+    exporter = None
+    watcher = None
+    if args.prometheus_port:
+        from .prometheus import Exporter, Registry
+
+        registry = Registry(experiment=config.experiment)
+        exporter = Exporter(registry, port=args.prometheus_port,
+                            host=args.prometheus_host).start()
+        watcher = registry.observer()
+        print(f"metrics at {exporter.url}")
+
+    try:
+        if args.concurrent:
+            from .prometheus import chain
+            from .scheduler import ConcurrentSweep, RetryPolicy, concurrent_reporter
+
+            runner = Runner(config, output_dir=args.output, resume=not args.no_resume)
+            retry = RetryPolicy(max_attempts=args.max_attempts)
+            sweep = ConcurrentSweep(runner, retry=retry,
+                                    on_event=chain(concurrent_reporter(), watcher),
+                                    max_workers=args.max_workers)
+            print(f"\nwriting to {runner.output_dir}")
+            print("per-device concurrency: "
+                  + ", ".join(f"{d}={p.max_concurrency}"
+                              for d, p in sorted(sweep.policies.items())) + "\n")
+            result = sweep.run(specs, check_clocks=not args.no_clock_check)
+            print(f"\nschedule summary written to "
+                  f"{os.path.join(runner.output_dir, 'schedule.json')}")
+            if result.retries:
+                print(f"{len(result.retries)} retry/failover event(s) in "
+                      f"{os.path.join(runner.output_dir, 'retries.jsonl')}")
+            return 1 if any(not r.ok for r in result.records) else 0
+
+        from .prometheus import chain
+
+        runner = Runner(config, output_dir=args.output, resume=not args.no_resume,
+                        on_event=chain(console_reporter(), watcher))
+        print(f"\nwriting to {runner.output_dir}\n")
+        records = runner.run(specs)
+        return 1 if any(not r.ok for r in records) else 0
+    finally:
+        if exporter is not None:
+            exporter.stop()
 
 
 def _cmd_report(args: argparse.Namespace) -> int:
@@ -138,6 +178,35 @@ def _cmd_report(args: argparse.Namespace) -> int:
         if not rendered.startswith("("):
             print(rendered)
             print()
+    return 0
+
+
+def _cmd_export(args: argparse.Namespace) -> int:
+    """Run records as Prometheus metrics: once to stdout, or served until interrupted.
+
+    The records stay the source of truth. This is a projection of them, which is why it
+    is a separate command reading a finished directory rather than something the runner
+    has to be trusted to have done correctly while it was busy measuring.
+    """
+    from .prometheus import Exporter, from_directory
+
+    registry = from_directory(args.directory)
+    if not args.serve:
+        sys.stdout.write(registry.render())
+        return 0
+
+    exporter = Exporter(registry, port=args.port, host=args.host).start()
+    sys.stderr.write(f"serving {args.directory} at {exporter.url}\n"
+                     "records are re-read on SIGINT-free restart only; Ctrl-C to stop\n")
+    try:
+        import time as _time
+
+        while True:
+            _time.sleep(3600)
+    except KeyboardInterrupt:
+        sys.stderr.write("\nstopped\n")
+    finally:
+        exporter.stop()
     return 0
 
 
@@ -338,6 +407,20 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--model", action="append", help="restrict to this model (repeatable)")
     run.add_argument("--mode", choices=["throughput", "latency"], help="restrict to one mode")
     run.add_argument("--limit", type=int, help="stop after this many runs")
+    run.add_argument("--concurrent", action="store_true",
+                     help="schedule across devices at once, honouring each device's "
+                          "max_concurrency (default 1)")
+    run.add_argument("--max-attempts", type=int, default=3,
+                     help="attempts per point before it is recorded as failed; only "
+                          "transport failures are retried (default 3)")
+    run.add_argument("--max-workers", type=int, default=32,
+                     help="ceiling on total worker threads for --concurrent")
+    run.add_argument("--no-clock-check", action="store_true",
+                     help="skip the NTP skew check before a concurrent sweep")
+    run.add_argument("--prometheus-port", type=int,
+                     help="serve /metrics on this port while the sweep runs")
+    run.add_argument("--prometheus-host", default="127.0.0.1",
+                     help="bind address for --prometheus-port (default 127.0.0.1)")
     run.set_defaults(func=_cmd_run)
 
     report = sub.add_parser("report", help="summarise a results directory")
@@ -349,6 +432,16 @@ def build_parser() -> argparse.ArgumentParser:
                         help="table format (default: text)")
     report.add_argument("--output", help="output directory for --full (default: <dir>/report)")
     report.set_defaults(func=_cmd_report)
+
+    export = sub.add_parser("export",
+                            help="render run records as Prometheus metrics")
+    export.add_argument("directory", help="directory of run records")
+    export.add_argument("--serve", action="store_true",
+                        help="serve /metrics instead of printing once")
+    export.add_argument("--port", type=int, default=9109)
+    export.add_argument("--host", default="127.0.0.1",
+                        help="bind address (default 127.0.0.1; use 0.0.0.0 to expose)")
+    export.set_defaults(func=_cmd_export)
 
     membw = sub.add_parser("membw",
                            help="measure a device's DRAM read ceiling (dram_peak_GBs)")
