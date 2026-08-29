@@ -1,0 +1,48 @@
+# GENERATED from the device config by K8sDevice.pod_manifest(), and checked in so
+# the pod a reader sees is the pod the harness creates. Regenerate with
+# tools/write_manifests.py rather than editing by hand.
+#
+# A 4 core CFS quota, equal to the benchmark's thread count. This is the arm
+# that answers whether a quota you would actually set in production costs you
+# throughput even when average utilisation sits inside it.
+#
+# The mlsyslab/spec-hash annotation is how the device notices that a running pod no
+# longer matches the config it is holding. Do not remove it: a pod without one is
+# treated as foreign and will not be adopted.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mlsyslab-cpu4
+  namespace: mlsyslab
+  labels:
+    app: mlsyslab
+    mlsyslab/device: k8s-cpu4
+  annotations:
+    mlsyslab/spec-hash: 805dc628d9ddd97d
+spec:
+  containers:
+  - name: agent
+    image: docker.io/library/mlsyslab-agent:0.2.0
+    imagePullPolicy: IfNotPresent
+    command:
+    - sleep
+    - infinity
+    workingDir: /opt/mlsyslab
+    resources:
+      limits:
+        cpu: '4'
+        memory: 4Gi
+      requests:
+        cpu: '4'
+        memory: 2Gi
+    volumeMounts:
+    - name: hostmount-0
+      mountPath: /models
+      readOnly: true
+  restartPolicy: Always
+  terminationGracePeriodSeconds: 5
+  volumes:
+  - name: hostmount-0
+    hostPath:
+      path: /home/manu/models
+      type: Directory

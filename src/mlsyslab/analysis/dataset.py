@@ -44,6 +44,10 @@ _COLUMNS = {
     "threads": lambda r: r.knobs.threads,
     "governor": lambda r: r.knobs.governor,
     "freq_khz": lambda r: r.knobs.freq_khz,
+    # How many times the backend repeated the measurement. Needed to turn the reported
+    # spread into an uncertainty on the mean, which is what any comparison is between.
+    "repetitions": lambda r: r.knobs.repetitions,
+    "warmup": lambda r: r.knobs.warmup,
     "ttft_ms": lambda r: r.metrics.ttft_ms,
     "prefill_tps": lambda r: r.metrics.prefill_tps,
     "decode_tps": lambda r: r.metrics.decode_tps,
@@ -66,6 +70,14 @@ _COLUMNS = {
     "throttled": lambda r: r.telemetry.throttled,
     "cpu_util_pct": lambda r: r.telemetry.cpu_util_pct_mean,
     "mode": lambda r: "latency" if r.metrics.ttft_ms is not None else "throughput",
+    # What the run was allowed to use, where anything constrained it. A throughput number
+    # taken under a CPU quota is not comparable to one taken without, and an analysis
+    # that cannot see the quota will compare them anyway.
+    "cpu_quota_cores": lambda r: (r.device.placement or {}).get("cpu_quota_cores"),
+    "runtime": lambda r: (r.device.placement or {}).get("runtime") or "host",
+    "qos_class": lambda r: (r.device.placement or {}).get("qos_class"),
+    "node": lambda r: (r.device.placement or {}).get("node"),
+    "image_id": lambda r: (r.device.placement or {}).get("image_id"),
 }
 
 

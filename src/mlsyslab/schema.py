@@ -73,6 +73,17 @@ class DeviceInfo:
     compiler: Optional[str] = None
     libc: Optional[str] = None
     capabilities: Dict[str, bool] = field(default_factory=dict)
+    # Where the run actually executed, and what was allowed to constrain it. Empty for a
+    # machine running a process the ordinary way; for a container it carries the pod and
+    # node it landed on, the image digest that actually ran, the QoS class, and the
+    # effective cgroup ceilings read from inside the container rather than copied from a
+    # config. Free-form on purpose: what constrains a run is a different set of facts on
+    # every kind of device, and a fixed schema would be either wrong or empty.
+    #
+    # This is not decoration. A run under a CPU quota is not comparable to one without,
+    # and a record that does not carry its own quota cannot be compared to anything by
+    # anyone who was not in the room when it was taken.
+    placement: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass

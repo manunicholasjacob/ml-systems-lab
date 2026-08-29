@@ -1,0 +1,55 @@
+# The agent pod on the cloud GPU node.
+#
+# Differs from the laptop pods in exactly three ways, and each one is load bearing:
+#
+#   nodeSelector      pins it to the GPU node. Without this the scheduler will happily
+#                     place it on the laptop, where it will run on the CPU and produce
+#                     numbers that look like GPU numbers.
+#   nvidia.com/gpu    requested AND limited. For extended resources Kubernetes requires
+#                     them to be equal, and asking for the GPU is what makes the device
+#                     plugin inject the driver.
+#   toleration        cloud GPU nodes are usually tainted so that ordinary workloads do
+#                     not land on the expensive machine.
+#
+# No cpu_limit here on purpose. The containerisation study is a CPU story; this node
+# exists to answer a different question, and a CFS quota would confound it.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mlsyslab-gpu
+  namespace: mlsyslab
+  labels:
+    app: mlsyslab
+    mlsyslab/device: cloud-gpu
+spec:
+  nodeSelector:
+    mlsyslab.gpu: "true"
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+  restartPolicy: Always
+  containers:
+    - name: agent
+      image: docker.io/library/mlsyslab-agent:0.2.0
+      imagePullPolicy: IfNotPresent
+      command: ["sleep", "infinity"]
+      workingDir: /opt/mlsyslab
+      resources:
+        requests:
+          cpu: "4"
+          memory: 8Gi
+          nvidia.com/gpu: 1
+        limits:
+          cpu: "8"
+          memory: 16Gi
+          nvidia.com/gpu: 1
+      volumeMounts:
+        - name: models
+          mountPath: /models
+          readOnly: true
+  volumes:
+    - name: models
+      hostPath:
+        path: /opt/models
+        type: Directory

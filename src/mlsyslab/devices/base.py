@@ -44,6 +44,14 @@ class Device:
         return path
 
     def exists(self, path: str) -> bool:
+        """Whether the path is there.
+
+        Implementations must raise :class:`DeviceError` rather than returning False when
+        they could not find out. The two are not the same answer, and conflating them is
+        how a dropped connection during discovery turns into "llama-bench not found on
+        k8s-cpu2", which reads as a configuration mistake, is recorded as one, and is
+        therefore never retried.
+        """
         raise NotImplementedError
 
     def package_root(self) -> str:
@@ -128,11 +136,25 @@ class Device:
 
     def find_binary(self, names: List[str], search_roots: List[str]) -> Optional[str]:
         """First existing path formed from the given names and roots, or None."""
-        for root in search_roots:
-            for name in names:
-                candidate = self.resolve(f"{root.rstrip('/')}/{name}" if root else name)
-                if self.exists(candidate):
-                    return candidate
+        candidates = [
+            self.resolve(f"{root.rstrip('/')}/{name}" if root else name)
+            for root in search_roots for name in names
+        ]
+        return self.first_existing(candidates)
+
+    def first_existing(self, paths: List[str]) -> Optional[str]:
+        """The first path here that exists, or None if none of them do.
+
+        A separate method from :meth:`exists` because asking about sixteen paths one at a
+        time costs sixteen round trips, and on a device reached over SSH that is sixteen
+        connections per run for a question with one answer. It was enough connection
+        churn to trip the remote sshd's rate limiting, which then surfaced as
+        "llama-bench not found" on a machine that had it. Devices that can ask once
+        override this; the default is the honest loop.
+        """
+        for path in paths:
+            if self.exists(path):
+                return path
         return None
 
     def __repr__(self) -> str:

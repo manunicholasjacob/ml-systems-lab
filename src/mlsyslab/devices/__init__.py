@@ -5,12 +5,14 @@ from __future__ import annotations
 from typing import Any, Dict
 
 from .base import Device, DeviceError
+from .k8s import K8sDevice
 from .local import LocalDevice
 from .ssh import SSHDevice
 
 _REGISTRY = {
     "local": LocalDevice,
     "ssh": SSHDevice,
+    "k8s": K8sDevice,
 }
 
 
@@ -22,11 +24,21 @@ def register(kind: str, cls) -> None:
 def from_config(device_id: str, config: Dict[str, Any]) -> Device:
     """Build a device from its config block.
 
-    The kind defaults to ssh when a host is given and local otherwise, so the common case
-    in a config file is just ``host:`` and a key path.
+    The kind is inferred from what the block contains, so the common case in a config
+    file is a couple of lines: a ``host`` means SSH, a ``pod`` or an ``image`` means
+    Kubernetes, and neither means this machine. An explicit ``kind`` always wins.
     """
     config = dict(config or {})
-    kind = config.get("kind") or ("ssh" if config.get("host") else "local")
+    # An explicit kind always wins. Otherwise a pod or an image means Kubernetes and a
+    # host means SSH, so the common case in a config file stays a couple of lines.
+    kind = config.get("kind")
+    if not kind:
+        if config.get("pod") or config.get("image") or config.get("namespace"):
+            kind = "k8s"
+        elif config.get("host"):
+            kind = "ssh"
+        else:
+            kind = "local"
     cls = _REGISTRY.get(kind)
     if cls is None:
         known = ", ".join(sorted(_REGISTRY))
@@ -34,4 +46,5 @@ def from_config(device_id: str, config: Dict[str, Any]) -> Device:
     return cls(device_id, config)
 
 
-__all__ = ["Device", "DeviceError", "LocalDevice", "SSHDevice", "from_config", "register"]
+__all__ = ["Device", "DeviceError", "K8sDevice", "LocalDevice", "SSHDevice",
+           "from_config", "register"]

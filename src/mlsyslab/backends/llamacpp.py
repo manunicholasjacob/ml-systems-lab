@@ -120,12 +120,27 @@ class LlamaCppBackend(Backend):
         return {
             "kind": "command",
             "argv": argv,
+            "env": self._env(spec),
             "timeout_s": spec.extra.get("timeout_s", 3600),
             "sample_hz": spec.sample_hz,
             "sample_power": spec.sample_power,
             "skip_leading_s": spec.extra.get("skip_leading_s", 0),
             "prepare": self._prepare(spec),
         }
+
+    def _env(self, spec: RunSpec) -> Dict[str, str]:
+        """Environment for the benchmark process: device defaults, then spec overrides.
+
+        Needed because where a build's shared objects live is a property of the machine
+        rather than of the experiment: the same binaries are reached one way on one
+        device and another way on the next, and this backend must not know or care which
+        kind of device it is talking to. Also the honest home for the OMP_* and GGML_*
+        knobs, which belong in the config next to the numbers they change rather than in
+        whichever shell happened to launch the sweep.
+        """
+        env = {str(k): str(v) for k, v in (self.config.get("env") or {}).items()}
+        env.update({str(k): str(v) for k, v in (spec.extra.get("env") or {}).items()})
+        return env
 
     def _build_server_task(self, spec: RunSpec, device) -> Dict[str, Any]:
         binary = self._find(device, _SERVER_NAMES)
@@ -160,6 +175,7 @@ class LlamaCppBackend(Backend):
         return {
             "kind": "server_latency",
             "server_argv": argv,
+            "env": self._env(spec),
             "port": port,
             "requests": requests,
             "startup_timeout_s": spec.extra.get("startup_timeout_s", 600),

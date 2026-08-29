@@ -1,0 +1,45 @@
+# GENERATED from the device config by K8sDevice.pod_manifest(), and checked in so
+# the pod a reader sees is the pod the harness creates. Regenerate with
+# tools/write_manifests.py rather than editing by hand.
+#
+# No CPU quota. Isolates containerisation and orchestration on their own:
+# namespaces, overlayfs, CNI and a pod sandbox, with the scheduler out of the way.
+#
+# The mlsyslab/spec-hash annotation is how the device notices that a running pod no
+# longer matches the config it is holding. Do not remove it: a pod without one is
+# treated as foreign and will not be adopted.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mlsyslab-unlimited
+  namespace: mlsyslab
+  labels:
+    app: mlsyslab
+    mlsyslab/device: k8s-unlimited
+  annotations:
+    mlsyslab/spec-hash: 7370473fb065f4bb
+spec:
+  containers:
+  - name: agent
+    image: docker.io/library/mlsyslab-agent:0.2.0
+    imagePullPolicy: IfNotPresent
+    command:
+    - sleep
+    - infinity
+    workingDir: /opt/mlsyslab
+    resources:
+      limits:
+        memory: 4Gi
+      requests:
+        memory: 2Gi
+    volumeMounts:
+    - name: hostmount-0
+      mountPath: /models
+      readOnly: true
+  restartPolicy: Always
+  terminationGracePeriodSeconds: 5
+  volumes:
+  - name: hostmount-0
+    hostPath:
+      path: /home/manu/models
+      type: Directory

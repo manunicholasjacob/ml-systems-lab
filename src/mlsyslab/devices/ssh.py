@@ -29,6 +29,32 @@ _DEFAULT_SSH_OPTIONS = [
 ]
 
 
+def _first_existing_script(paths):
+    """One shell command that names the first path that exists, or says none did."""
+    quoted = " ".join(_sq(p) for p in paths)
+    return (
+        "for p in " + quoted + "; do "
+        'if [ -e "$p" ]; then printf \'MLSYS_HIT:%s\' "$p"; exit 0; fi; '
+        "done; printf 'MLSYS_NONE'"
+    )
+
+
+def _parse_first_existing(text):
+    """None means nothing matched; a raised ValueError means we could not tell."""
+    text = text.strip()
+    marker = text.rfind("MLSYS_HIT:")
+    if marker != -1:
+        return text[marker + len("MLSYS_HIT:"):].strip()
+    if text.endswith("MLSYS_NONE"):
+        return None
+    raise ValueError(text[-300:] or "no output")
+
+
+def _sq(text: str) -> str:
+    """Single-quote a string for /bin/sh."""
+    return "'" + text.replace("'", "'\\''") + "'"
+
+
 class SSHDevice(Device):
     kind = "ssh"
 
@@ -106,8 +132,47 @@ class SSHDevice(Device):
         return path
 
     def exists(self, path: str) -> bool:
+        """Whether the path is on the device, or a loud failure if we could not look.
+
+        ``ssh`` exits non-zero both when ``test -e`` says no and when the connection
+        dropped, and a benchmark that cannot tell those apart records a dropped tailnet
+        as a missing model file. The answer is printed and insisted upon instead.
+        """
         quoted = self.resolve(path).replace("'", "'\\''")
-        return self.run_shell(f"test -e '{quoted}'", timeout_s=60).returncode == 0
+        done = self.run_shell(
+            f"if [ -e '{quoted}' ]; then echo MLSYS_YES; else echo MLSYS_NO; fi",
+            timeout_s=60,
+        )
+        answer = done.stdout.decode("utf-8", "replace").strip()
+        if answer.endswith("MLSYS_YES"):
+            return True
+        if answer.endswith("MLSYS_NO"):
+            return False
+        raise DeviceError(
+            f"could not determine whether {path} exists on {self.target} "
+            f"(exit {done.returncode}): "
+            + (done.stderr.decode("utf-8", "replace")[-300:] or "no output")
+        )
+
+    def first_existing(self, paths: List[str]) -> Optional[str]:
+        """Ask about every candidate over one connection instead of one each.
+
+        Backend discovery searches eight directories for two names. One path per
+        connection is sixteen SSH handshakes per run, which is both slow and enough
+        churn to trip a remote sshd's startup rate limiting. When that happened the
+        dropped connections came back as "the binary is not there", on a machine where
+        it was.
+        """
+        if not paths:
+            return None
+        done = self.run_shell(_first_existing_script(paths), timeout_s=90)
+        try:
+            return _parse_first_existing(done.stdout.decode("utf-8", "replace"))
+        except ValueError as exc:
+            raise DeviceError(
+                f"could not search {self.target} for {len(paths)} candidate path(s) "
+                f"(exit {done.returncode}): {exc}"
+            ) from exc
 
     # ------------------------------------------------------------------ deployment
 
