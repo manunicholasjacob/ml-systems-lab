@@ -1,7 +1,7 @@
 """Convert the paper-12 campaign results into RunRecords.
 
 The lab must not launch empty: these are the real measurements behind "The Memory Wall at
-the Edge of Language" (submitted to IEEE TC), reshaped into the unified schema so every
+the Edge of Language" (since retitled, now under review at IEEE IoT-J), reshaped into the unified schema so every
 table and figure in this repo works against them on day one. Nothing is re-measured and
 nothing is invented; fields the old formats did not record are left absent, and every
 record is tagged with its source file.

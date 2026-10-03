@@ -63,11 +63,12 @@ worth showing.
 
 ## paper12/
 
-The measurements behind "The Memory Wall at the Edge of Language" (submitted to IEEE
-Transactions on Computers, 2026), converted into the RunRecord schema by
+The measurements behind "The Memory Wall at the Edge of Language" (since retitled
+"One Law, Two Memory Systems" and now under review at the IEEE Internet of Things
+Journal), converted into the RunRecord schema by
 `tools/backfill_paper12.py`. 29 records: the Pi 5 thread-sweep roofline, the
 quantization sweep, PMIC energy per token, and the x86 cross-platform validation up to
-7B. The framework reproduces the paper's published fits exactly (Pi 10.7 GB/s, x86
+7B. The framework reproduces the manuscript's reported fits exactly (Pi 10.7 GB/s, x86
 35.7 GB/s, both R^2 = 0.980), which is the correctness check for the whole pipeline.
 
 One record in this set reports 107% of the declared bandwidth ceiling, and the framework

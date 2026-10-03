@@ -22,8 +22,8 @@ flags, CPU utilization). The analysis layer turns a directory of records into
 publication-quality tables (text, Markdown, LaTeX/booktabs) and figures.
 
 Built and used for a real research program: the records under `results/paper12/` are the
-measurements behind an IEEE Transactions on Computers submission, and the framework
-reproduces that paper's published roofline fits exactly (Pi 5: 10.7 GB/s effective,
+measurements behind a manuscript now under review at the IEEE Internet of Things Journal, and the
+framework reproduces that manuscript's roofline fits exactly (Pi 5: 10.7 GB/s effective,
 R^2 = 0.980; i7-12700H: 35.7 GB/s, R^2 = 0.980). Two campaigns run natively by this
 framework then re-measured the same quantities independently and agreed within 1.7%.
 
@@ -55,7 +55,7 @@ by reparsing rather than by repeating an overnight campaign.
 
 It was written because five research campaigns had each grown their own copy of the same
 harness and the copies had drifted. The framework that replaced them reproduces those
-papers' published fits from their own data, and the datasets it has produced since ship
+papers' reported fits from their own data, and the datasets it has produced since ship
 in `results/` for anyone who wants to check a claim without owning the hardware.
 
 ![roofline](results/combined-report/fig_roofline.png)
@@ -393,7 +393,7 @@ k8s/                 namespace and pod manifests, generated from the device
 k8s/cloud/           the cloud GPU node: manifests, runbook, teardown
 grafana/             a dashboard for a running sweep, checked in as JSON
 tools/               result backfill converters, manifest generator, study analyses
-results/paper12/     real measurements from the IEEE TC submission
+results/paper12/     real measurements from the edge-LLM decode paper (under review)
 results/containerization/  what containerisation costs a benchmark, and whether it
                      changes the ranking
 tests/               hardware-free tests, including a fake kubectl so the Kubernetes
