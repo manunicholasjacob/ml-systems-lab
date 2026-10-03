@@ -30,3 +30,6 @@ Thumbs.db
 .claude/
 CLAUDE.md
 graphify-out/
+
+# Crash dumps from MSYS2 and Cygwin tools (du.exe left one in the repository root once)
+*.stackdump
