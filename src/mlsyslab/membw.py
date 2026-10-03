@@ -81,10 +81,30 @@ def _median(values: List[float]) -> float:
     return ordered[mid] if len(ordered) % 2 else 0.5 * (ordered[mid - 1] + ordered[mid])
 
 
+def positive_int(text: str) -> int:
+    """argparse type: a whole number of at least 1."""
+    try:
+        value = int(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"expected a whole number, got {text!r}")
+    if value < 1:
+        raise argparse.ArgumentTypeError(f"must be at least 1, got {value}")
+    return value
+
+
+def _require_reps(reps: int) -> None:
+    # With no repetitions every kernel scores 0.0, and the result is a 0.00 GB/s ceiling
+    # with no kernel and no thread count that still reads like a measurement, and that
+    # `mlsys membw` then offers as the device's dram_peak_GBs.
+    if reps < 1:
+        raise ValueError(f"reps must be at least 1, got {reps}")
+
+
 def measure(working_set_mb: Optional[int] = None,
             thread_counts: Optional[List[int]] = None,
             reps: int = 5) -> Dict[str, Any]:
     """Measure achievable memory bandwidth. ``peak_read_GBs`` is the headline."""
+    _require_reps(reps)
     try:
         import numpy as np
     except ImportError as exc:
@@ -247,6 +267,7 @@ def measure_device(working_set_mb: Optional[int] = None, reps: int = 7,
     Raises :class:`AcceleratorUnavailable` rather than returning a guess when there is no
     device or no torch.
     """
+    _require_reps(reps)
     torch = _torch()
     if torch is None:
         raise AcceleratorUnavailable(
@@ -352,8 +373,10 @@ def device_context() -> Dict[str, Any]:
 
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(prog="mlsyslab.membw")
-    parser.add_argument("--mb", type=int, help="working set in MB")
-    parser.add_argument("--reps", type=int, default=5)
+    parser.add_argument("--mb", type=positive_int, help="working set in MB")
+    parser.add_argument("--reps", type=positive_int, default=None,
+                        help="repetitions per kernel (default: 5 on the host, 7 on "
+                             "an accelerator)")
     parser.add_argument("--json", action="store_true", help="bare JSON, no sentinels")
     parser.add_argument("--device", action="store_true",
                         help="measure the accelerator's memory instead of the host's")
@@ -365,7 +388,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             result = measure_device(working_set_mb=args.mb, reps=args.reps or 7,
                                     index=args.device_index)
         else:
-            result = measure(working_set_mb=args.mb, reps=args.reps)
+            result = measure(working_set_mb=args.mb, reps=args.reps or 5)
     except Exception as exc:
         result = {"status": "failed", "error": f"{type(exc).__name__}: {exc}"}
         if args.device:

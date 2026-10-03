@@ -72,3 +72,56 @@ def test_compare_command_end_to_end(tmp_path, capsys):
     out = capsys.readouterr().out
     assert code == 0
     assert "3.00" in out  # the B/A ratio
+
+
+@pytest.mark.parametrize("argv", [
+    ["membw", "--reps", "0"],
+    ["membw", "--reps", "-3"],
+    ["membw", "--mb", "0"],
+    ["membw", "--reps", "five"],
+    ["run", "c.yaml", "--max-attempts", "0"],
+    ["run", "c.yaml", "--max-workers", "0"],
+    ["run", "c.yaml", "--limit", "0"],
+])
+def test_bad_numbers_are_usage_errors(argv, capsys):
+    """`mlsys membw --reps 0` used to print a 0.00 GB/s ceiling, with no kernel and no
+    thread count, and offer it as the device's dram_peak_GBs."""
+    with pytest.raises(SystemExit) as caught:
+        build_parser().parse_args(argv)
+    assert caught.value.code == 2
+    assert "error:" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("reps", [0, -1])
+def test_measure_refuses_zero_repetitions(reps):
+    from mlsyslab import membw
+
+    with pytest.raises(ValueError, match="reps must be at least 1"):
+        membw.measure(working_set_mb=64, thread_counts=[1], reps=reps)
+    with pytest.raises(ValueError, match="reps must be at least 1"):
+        membw.measure_device(reps=reps)
+
+
+def test_membw_module_rejects_zero_repetitions():
+    out = subprocess.run([sys.executable, "-m", "mlsyslab.membw", "--reps", "0"],
+                         capture_output=True, text=True)
+    assert out.returncode == 2
+    assert "must be at least 1" in out.stderr
+
+
+def test_accelerator_default_repetitions_are_reachable(monkeypatch):
+    """measure_device documents 7 repetitions by default, but the module's --reps
+    defaulted to 5, so `python -m mlsyslab.membw --device` never used 7."""
+    from mlsyslab import membw
+
+    seen = {}
+
+    def fake_device(working_set_mb=None, reps=7, index=0):
+        seen["reps"] = reps
+        return {"status": "ok"}
+
+    monkeypatch.setattr(membw, "measure_device", fake_device)
+    assert membw.main(["--device", "--json"]) == 0
+    assert seen["reps"] == 7
+    assert membw.main(["--device", "--json", "--reps", "3"]) == 0
+    assert seen["reps"] == 3

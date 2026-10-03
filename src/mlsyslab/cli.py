@@ -21,6 +21,7 @@ import sys
 from typing import List, Optional
 
 from . import __version__
+from .membw import positive_int
 
 
 def _cmd_probe(args: argparse.Namespace) -> int:
@@ -406,14 +407,14 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--device", action="append", help="restrict to this device (repeatable)")
     run.add_argument("--model", action="append", help="restrict to this model (repeatable)")
     run.add_argument("--mode", choices=["throughput", "latency"], help="restrict to one mode")
-    run.add_argument("--limit", type=int, help="stop after this many runs")
+    run.add_argument("--limit", type=positive_int, help="stop after this many runs")
     run.add_argument("--concurrent", action="store_true",
                      help="schedule across devices at once, honouring each device's "
                           "max_concurrency (default 1)")
-    run.add_argument("--max-attempts", type=int, default=3,
+    run.add_argument("--max-attempts", type=positive_int, default=3,
                      help="attempts per point before it is recorded as failed; only "
                           "transport failures are retried (default 3)")
-    run.add_argument("--max-workers", type=int, default=32,
+    run.add_argument("--max-workers", type=positive_int, default=32,
                      help="ceiling on total worker threads for --concurrent")
     run.add_argument("--no-clock-check", action="store_true",
                      help="skip the NTP skew check before a concurrent sweep")
@@ -447,8 +448,9 @@ def build_parser() -> argparse.ArgumentParser:
                            help="measure a device's DRAM read ceiling (dram_peak_GBs)")
     membw.add_argument("--device", help="device id from --config; omit for this machine")
     membw.add_argument("--config", help="config file defining the device")
-    membw.add_argument("--mb", type=int, help="working set in MB")
-    membw.add_argument("--reps", type=int, default=5)
+    membw.add_argument("--mb", type=positive_int, help="working set in MB")
+    membw.add_argument("--reps", type=positive_int, default=5,
+                       help="repetitions per kernel (default 5)")
     membw.set_defaults(func=_cmd_membw)
 
     compare = sub.add_parser("compare", help="compare a metric across two result dirs")

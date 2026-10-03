@@ -92,3 +92,19 @@ def test_dry_run_table_hides_tokens_for_vision(tmp_path):
     table = specs_to_table(config.specs)
     assert "prompt" not in table
     assert "batch" in table
+
+
+@pytest.mark.parametrize("name, text", [
+    ("broken.json", '{"experiment": "x",'),
+    ("broken.yaml", "devices: [unclosed\n"),
+])
+def test_unparseable_config_names_the_file(tmp_path, name, text):
+    """A syntax error used to surface as a bare JSONDecodeError or YAMLError with a line
+    and column but no file, which is no help when a sweep loads several configs."""
+    if name.endswith(".yaml"):
+        pytest.importorskip("yaml")
+    path = tmp_path / name
+    path.write_text(text, encoding="utf-8")
+    with pytest.raises(ConfigError, match="could not parse") as caught:
+        load(str(path))
+    assert name in str(caught.value)

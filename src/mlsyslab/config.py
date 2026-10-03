@@ -82,9 +82,15 @@ def _load_document(path: str) -> Dict[str, Any]:
                 "reading YAML configs needs PyYAML (pip install pyyaml), "
                 "or write the config as JSON"
             ) from exc
-        data = yaml.safe_load(text)
+        try:
+            data = yaml.safe_load(text)
+        except yaml.YAMLError as exc:
+            raise ConfigError(f"could not parse {path} as YAML: {exc}") from exc
     else:
-        data = json.loads(text)
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError as exc:
+            raise ConfigError(f"could not parse {path} as JSON: {exc}") from exc
     if not isinstance(data, dict):
         raise ConfigError(f"{path} must contain a mapping at the top level")
     return data
