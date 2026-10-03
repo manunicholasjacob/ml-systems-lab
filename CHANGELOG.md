@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.2.1 (2026-10-03)
+
+A patch release. No measurement, record format or analysis changes, and every result
+under `results/` is untouched.
+
+### Fixed
+
+- `mlsys membw --reps 0` printed a ceiling of 0.00 GB/s, with no kernel and no thread
+  count, and offered it as the device's `dram_peak_GBs`. `--reps` and `--mb` on
+  `mlsys membw` and on `python -m mlsyslab.membw`, and `--limit`, `--max-attempts` and
+  `--max-workers` on `mlsys run`, must now be at least 1; anything else is a usage error
+  with exit code 2. `membw.measure()` and `membw.measure_device()` refuse `reps < 1`
+  themselves.
+- `python -m mlsyslab.membw --device` documented seven repetitions on an accelerator but
+  always ran five, because `--reps` defaulted to 5. It now runs 5 on the host and 7 on
+  the device unless told otherwise.
+- A config file with a syntax error raised a bare `JSONDecodeError` or `YAMLError` that
+  gave a line and column but not the file. It is now a `ConfigError` naming the file.
+- The paper-12 data was described as a submission to IEEE Transactions on Computers in the
+  README, `results/README.md`, the backfill docstring and the Zenodo description. That
+  manuscript has since been retitled and is under review at the IEEE Internet of Things
+  Journal, so each place now names that venue. "Published fits" is now "reported fits", since none
+  of the manuscripts is published.
+- The README said the test suite was 113 tests taking about 20 seconds. It is now
+  described without a count that goes stale with every release.
+
+### Changed
+
+- Python 3.14 is tested in CI on Linux, macOS and Windows and declared in the package
+  classifiers.
+- Removed `du.exe.stackdump`, an MSYS2 crash dump committed by accident with 0.1.2, and
+  ignore `*.stackdump`.
+
 ## 0.2.0 (2026-08-28)
 
 Kubernetes, concurrent scheduling with partial failure, and observability.

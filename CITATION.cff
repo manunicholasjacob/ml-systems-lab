@@ -15,7 +15,7 @@ identifiers:
     description: "Concept DOI, always resolves to the latest archived version"
   - type: doi
     value: "10.5281/zenodo.22162103"
-    description: "DOI for version v0.2.0, the most recent archived release"
+    description: "DOI for version v0.2.0"
 abstract: >-
   A benchmarking framework for ML inference across heterogeneous hardware. One
   configuration file and one command execute an experiment matrix across any mix of
@@ -34,8 +34,8 @@ abstract: >-
   analysis layer turns a directory of records into publication-quality tables and
   figures.
 license: MIT
-version: 0.2.0
-date-released: "2026-08-28"
+version: 0.2.1
+date-released: "2026-10-03"
 keywords:
   - benchmarking
   - inference

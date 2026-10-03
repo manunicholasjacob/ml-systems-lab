@@ -146,7 +146,7 @@ From a checkout, which is what you want if you intend to change anything:
 git clone https://github.com/manunicholasjacob/ml-systems-lab
 cd ml-systems-lab
 pip install -e ".[dev]"                    # adds pytest
-python -m pytest -q                        # 113 tests, no hardware needed, about 20 seconds
+python -m pytest -q                        # whole suite, no hardware needed, a minute or two
 ```
 
 Dependencies are numpy, matplotlib and PyYAML, all pulled in automatically. The
