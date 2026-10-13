@@ -35,7 +35,7 @@
 # from bare metal in the strict sense and must never be presented as such.
 #
 # Run it:
-#   mlsys run configs/containerization.yaml --concurrent --prometheus-port 9109
+#   mlsys run configs/containerization.yaml --concurrent --prometheus-port 10058
 #
 # Setup is in docker/README.md. It is four commands and none of them are optional.
 

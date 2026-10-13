@@ -213,7 +213,7 @@ and are worthless.
 
 ```bash
 mlsys probe --config configs/cloud-gpu.yaml
-mlsys run configs/cloud-gpu.yaml --concurrent --prometheus-port 9109
+mlsys run configs/cloud-gpu.yaml --concurrent --prometheus-port 10058
 ```
 
 `configs/cloud-gpu.yaml` puts the cloud node in its **own** resource group. It is a

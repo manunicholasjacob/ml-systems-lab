@@ -439,7 +439,8 @@ def build_parser() -> argparse.ArgumentParser:
     export.add_argument("directory", help="directory of run records")
     export.add_argument("--serve", action="store_true",
                         help="serve /metrics instead of printing once")
-    export.add_argument("--port", type=int, default=9109)
+    export.add_argument("--port", type=int, default=10058,
+                        help="port to serve on (default 10058)")
     export.add_argument("--host", default="127.0.0.1",
                         help="bind address (default 127.0.0.1; use 0.0.0.0 to expose)")
     export.set_defaults(func=_cmd_export)

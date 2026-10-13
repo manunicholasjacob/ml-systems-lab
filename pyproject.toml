@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ml-systems-lab"
-version = "0.2.1"
+version = "0.2.2"
 description = "A reproducible benchmarking framework for ML inference across laptops, single-board computers and servers."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -13,6 +13,7 @@ authors = [{ name = "Manu Nicholas Jacob" }]
 keywords = [
     "benchmark", "inference", "llama.cpp", "onnxruntime", "edge-ai",
     "raspberry-pi", "energy", "latency", "ttft", "quantization", "reproducibility",
+    "llm-inference", "kubernetes", "prometheus", "benchmarking", "power-measurement",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -31,7 +32,9 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: System :: Benchmark",
+    "Topic :: System :: Monitoring",
 ]
 # The measurement core is pure standard library on purpose: it has to run unmodified on
 # a 2 GB Raspberry Pi over SSH, where installing a scientific stack is neither cheap nor
@@ -46,6 +49,10 @@ onnx = ["onnxruntime>=1.15"]
 [project.urls]
 Homepage = "https://github.com/manunicholasjacob/ml-systems-lab"
 Issues = "https://github.com/manunicholasjacob/ml-systems-lab/issues"
+Changelog = "https://github.com/manunicholasjacob/ml-systems-lab/blob/main/CHANGELOG.md"
+"Write-up" = "https://manunicholasjacob.com/writing/quota-not-the-container/"
+Documentation = "https://github.com/manunicholasjacob/ml-systems-lab/tree/main/docs"
+DOI = "https://doi.org/10.5281/zenodo.21867055"
 
 [project.scripts]
 mlsys = "mlsyslab.cli:main"

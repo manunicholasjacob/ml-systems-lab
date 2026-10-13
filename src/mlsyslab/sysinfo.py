@@ -45,6 +45,26 @@ def _read(path: str) -> Optional[str]:
         return None
 
 
+def _windows_cpu_name() -> Optional[str]:
+    """The brand string, from the registry. wmic is gone from Windows 11 24H2 onwards."""
+    try:
+        import winreg  # Windows only
+
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"HARDWARE\DESCRIPTION\System\CentralProcessor\0") as key:
+            value, _ = winreg.QueryValueEx(key, "ProcessorNameString")
+        value = str(value).strip()
+        return value or None
+    except (ImportError, OSError):
+        return None
+
+
+def _powershell_cim(expr: str) -> Optional[str]:
+    """One CIM query through Windows PowerShell, for when wmic is not installed."""
+    out = _run(["powershell", "-NoProfile", "-NonInteractive", "-Command", expr],
+               timeout=15.0)
+    return out.strip() if out and out.strip() else None
+
+
 def cpu_model() -> Optional[str]:
     system = platform.system()
     if system == "Linux":
@@ -62,6 +82,9 @@ def cpu_model() -> Optional[str]:
         if out:
             return out.strip()
     elif system == "Windows":
+        name = _windows_cpu_name()
+        if name:
+            return name
         out = _run(["wmic", "cpu", "get", "name", "/value"])
         if out:
             m = re.search(r"Name=(.+)", out)
@@ -118,6 +141,11 @@ def physical_cores() -> Optional[int]:
             nums = [int(x) for x in re.findall(r"NumberOfCores=(\d+)", out)]
             if nums:
                 return sum(nums)
+        out = _powershell_cim(
+            "(Get-CimInstance Win32_Processor | Measure-Object -Property NumberOfCores "
+            "-Sum).Sum")
+        if out and out.isdigit() and int(out) > 0:
+            return int(out)
     return None
 
 
@@ -283,6 +311,9 @@ def gpu() -> Optional[str]:
             names = [m.strip() for m in re.findall(r"Name=(.+)", out) if m.strip()]
             if names:
                 return names[0]
+        out = _powershell_cim("(Get-CimInstance Win32_VideoController).Name")
+        if out:
+            return out.splitlines()[0].strip()
     return None
 
 

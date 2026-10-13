@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.2.2 (2026-10-12)
+
+No measurement, record format or analysis changes; every result under `results/` is
+untouched.
+
+### Changed
+
+- **The Prometheus exporter's default port is now 10058**, the next free number on the
+  Prometheus default-port allocations page. 9109 belongs to the Graphite exporter. `mlsys export`
+  defaults to 10058, and the README, configs, Grafana note and runbooks use it. If you
+  scrape a running sweep, change the target or pass `--prometheus-port 9109` /
+  `--port 9109` to keep the old one.
+- The README quickstart runs straight after `pip install`: `mlsys probe` and
+  `mlsys membw` need no config. The full YAML-driven run is shown from a clone, because
+  `configs/` is not part of the package.
+- PyPI page: keywords, classifiers and Documentation and DOI links; pipx and uv install
+  lines.
+- CI installs the built wheel outside the checkout and runs the README's first command
+  block from an empty directory (`tools/verify_quickstart.py`), so a quickstart that only
+  works from a clone fails in CI.
+
+### Fixed
+
+- On Windows 11 24H2 and later, which no longer ship `wmic`, records said
+  "Intel64 Family 6 Model ..." for the CPU and carried no physical core count or GPU name.
+  The CPU name now comes from the registry, and the core count and GPU name from CIM.
+
 ## 0.2.1 (2026-10-03)
 
 A patch release. No measurement, record format or analysis changes, and every result

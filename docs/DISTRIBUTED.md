@@ -188,7 +188,7 @@ reported as agreeing rather than as slightly wrong.
 ## Watching it
 
 ```
-mlsys run configs/lab.yaml --concurrent --prometheus-port 9109
+mlsys run configs/lab.yaml --concurrent --prometheus-port 10058
 mlsys export runs/lab --serve            # a finished directory, same metrics
 ```
 

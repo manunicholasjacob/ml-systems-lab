@@ -1,5 +1,5 @@
 {
-  "__comment": "ml-systems-lab sweep dashboard. Import into Grafana and point it at a Prometheus datasource scraping `mlsys run --prometheus-port 9109` or `mlsys export --serve`. This dashboard is for WATCHING a sweep. The published numbers come from the run records in runs/<experiment>/, never from here: Prometheus keeps a rolling window and rounds on the wire, and the records do neither.",
+  "__comment": "ml-systems-lab sweep dashboard. Import into Grafana and point it at a Prometheus datasource scraping `mlsys run --prometheus-port 10058` or `mlsys export --serve`. This dashboard is for WATCHING a sweep. The published numbers come from the run records in runs/<experiment>/, never from here: Prometheus keeps a rolling window and rounds on the wire, and the records do neither.",
   "annotations": {
     "list": [
       {

@@ -5,13 +5,25 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21867055.svg)](https://doi.org/10.5281/zenodo.21867055)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](pyproject.toml)
+[![Results gallery](https://img.shields.io/badge/results-add%20your%20machine-blue.svg)](https://github.com/manunicholasjacob/ml-systems-lab/issues/new/choose)
 
 A reproducible benchmarking framework for ML inference across heterogeneous hardware:
 laptops, single-board computers, and servers, from one config file and one command.
 
 ```
 pip install ml-systems-lab
-mlsys run configs/example-smoke.yaml
+mlsys probe                     # what this machine can measure: power, thermals, GPU, clocks
+mlsys membw                     # its sustained DRAM read ceiling, in about a minute
+```
+
+Both work straight after the install, with no config and no model. The example configs
+and the shipped datasets live in the repository rather than in the package, so for a
+first real run:
+
+```
+git clone https://github.com/manunicholasjacob/ml-systems-lab && cd ml-systems-lab
+mlsys report results/pi5-campaign              # 43 measured points from a Raspberry Pi 5
+mlsys run configs/example-smoke.yaml           # your own sweep, after editing the paths
 mlsys report runs/smoke-test --full
 ```
 
@@ -138,6 +150,7 @@ Python 3.9 or newer, on Linux, macOS or Windows.
 ```
 pip install ml-systems-lab                 # the released version
 pip install ml-systems-lab[onnx]           # plus onnxruntime, for the ORT backend here
+pipx install ml-systems-lab                # or: uv tool install ml-systems-lab (command: mlsys)
 ```
 
 From a checkout, which is what you want if you intend to change anything:
@@ -270,7 +283,7 @@ devices:
 ```
 
 ```
-mlsys run configs/lab.yaml --concurrent --prometheus-port 9109
+mlsys run configs/lab.yaml --concurrent --prometheus-port 10058
 ```
 
 What that buys, and what it deliberately refuses to do:
@@ -345,13 +358,18 @@ These are not bare-metal numbers.
 ## Watching a sweep
 
 ```
-mlsys run configs/lab.yaml --concurrent --prometheus-port 9109
+mlsys run configs/lab.yaml --concurrent --prometheus-port 10058
 mlsys export runs/lab --serve          # or a finished directory, same metrics
 ```
 
-Point Prometheus at `:9109/metrics` and import `grafana/mlsyslab-sweep.json`: devices up
+Point Prometheus at `:10058/metrics` and import `grafana/mlsyslab-sweep.json`: devices up
 or down, clock offsets, effective CPU quotas, runs finished and in flight per device, and
 throughput, power and temperature per point as each completes.
+
+The default port is 10058 (`mlsys export --port` changes it). Versions up to 0.2.1 used
+9109, which the Prometheus default-port allocations list gives to the Graphite exporter,
+so the two could not run on one host. Pass `--prometheus-port 9109` or `--port 9109` if
+an existing scrape config still points there.
 
 The records on disk remain the result. The exporter is never in the write path, so a
 scrape that never happens costs a graph and not a measurement, and it adds no dependency:

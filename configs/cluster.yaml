@@ -25,7 +25,7 @@
 #   both, which is the entire point of running concurrently at all.
 #
 # Run it:
-#   mlsys run configs/cluster.yaml --concurrent --prometheus-port 9109
+#   mlsys run configs/cluster.yaml --concurrent --prometheus-port 10058
 #
 # Expect the clock check to say something about the Pi. Its offset is recorded either way.
 

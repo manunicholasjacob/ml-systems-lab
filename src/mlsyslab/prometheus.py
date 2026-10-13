@@ -299,7 +299,7 @@ def from_directory(path: str, experiment: Optional[str] = None) -> Registry:
 class Exporter:
     """A /metrics endpoint on a background thread, for the duration of a sweep."""
 
-    def __init__(self, registry: Registry, port: int = 9109, host: str = "127.0.0.1"):
+    def __init__(self, registry: Registry, port: int = 10058, host: str = "127.0.0.1"):
         self.registry = registry
         self.host = host
         self.port = port
