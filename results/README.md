@@ -90,9 +90,13 @@ with telemetry the original campaign lacked, plus what it could not measure:
 - TTFT via llama-server streaming: 789 ms at 64 prompt tokens to 12.1 s at 1024 (0.5B)
 - per-rail power: DRAM is 2 to 4% of package power during decode
 - temperature and throttle state inside every record
-- ONNX Runtime vision: int8 is ~11x faster than fp32 on the Cortex-A76
-  (resnet18: 1.10 ms vs 12.78 ms), the mirror image of x86 where the same int8 model
-  is ~3.6x slower than fp32
+- ONNX Runtime vision on CIFAR-sized (32x32) inputs: mean latency per model and
+  precision, in the vision table of `report/REPORT.md`. These graphs are small enough
+  to be overhead-bound, so read the rows as measurements of these particular files,
+  not as a general int8-versus-fp32 speedup for the core. The Pi's int8 files are static
+  QDQ exports (QuantizeLinear/DequantizeLinear around the convolutions, no
+  ConvInteger); check the operator graph of any quantized model before comparing it
+  with another
 
 Provenance note: five points in the original power block ran while another workload
 was on the machine. The per-record `stdev_pct` integrity flag identified all five
@@ -111,8 +115,9 @@ behind an automated idle gate after another workload finished:
   keep pace with K-quants on x86
 - context-depth decay: 0.5B decode falls 77 to 32 tok/s from depth 512 to 8192
 - TTFT from 367 ms (0.5B, 64-token prompt) to 70.2 s (3B, 4096-token prompt)
-- ONNX batch scaling on CPU, and int8 slower than fp32 at every thread count, the
-  mirror image of the Pi result
+- ONNX batch scaling on CPU; on this machine the int8 CIFAR files ran slower than
+  their fp32 counterparts at every thread count (32x32 inputs, overhead-bound, as on
+  the Pi)
 
 13 records carry a spread flag above 10%: ten are sub-millisecond ONNX inferences
 where Windows scheduler jitter is a large fraction of the measurement, three are

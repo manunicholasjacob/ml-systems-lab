@@ -1,0 +1,44 @@
+# ONNX Runtime on the CPU: latency percentiles and batch scaling for one model.
+#
+# The onnxruntime backend times inference in-process on the device and reports mean,
+# p50, p95 and p99 latency plus throughput, at each batch size. It needs onnxruntime in
+# the interpreter the device points at (`pip install ml-systems-lab[onnx]` covers the
+# local one); `python:` lets a device use a different environment from the harness.
+#
+# Before running, edit the model paths and run
+# `mlsys doctor --config configs/examples/onnx-cpu.yaml`.
+#
+# Run:     mlsys run configs/examples/onnx-cpu.yaml
+# Report:  mlsys report runs/onnx-cpu --full
+#
+# If you compare an fp32 file with a quantized one, check the quantized file's operator
+# graph first: QuantizeLinear/DequantizeLinear pairs (QDQ), QLinearConv (QOperator) and
+# DynamicQuantizeLinear/ConvInteger (dynamic) are three different things, and a file
+# name does not tell you which one you have.
+experiment: onnx-cpu
+output_dir: runs/onnx-cpu
+
+devices:
+  local:
+    kind: local
+    # python: /path/to/venv/bin/python          # optional: an interpreter with onnxruntime
+
+models:
+  model-fp32:
+    quantization: fp32
+    paths: { local: /path/to/model_fp32.onnx }  # <-- EDIT
+  model-int8:
+    quantization: int8
+    paths: { local: /path/to/model_int8.onnx }  # <-- EDIT
+
+defaults:
+  backend: onnxruntime
+  repetitions: 50
+  warmup: 10
+
+matrix:
+  - devices: [local]
+    models: [model-fp32, model-int8]
+    modes: [throughput]
+    threads: [1, 4]
+    batch_sizes: [1, 8, 32]

@@ -45,13 +45,16 @@ dependencies = ["numpy>=1.20", "matplotlib>=3.4", "PyYAML>=5.4"]
 [project.optional-dependencies]
 dev = ["pytest>=7"]
 onnx = ["onnxruntime>=1.15"]
+# The documentation site (mkdocs.yml). Upper bounds because MkDocs 2 and Material 10
+# are not drop-in upgrades; CI builds with --strict, so a bad combination fails there.
+docs = ["mkdocs>=1.6,<2", "mkdocs-material>=9.5,<10"]
 
 [project.urls]
 Homepage = "https://github.com/manunicholasjacob/ml-systems-lab"
 Issues = "https://github.com/manunicholasjacob/ml-systems-lab/issues"
 Changelog = "https://github.com/manunicholasjacob/ml-systems-lab/blob/main/CHANGELOG.md"
 "Write-up" = "https://manunicholasjacob.com/writing/quota-not-the-container/"
-Documentation = "https://github.com/manunicholasjacob/ml-systems-lab/tree/main/docs"
+Documentation = "https://manunicholasjacob.com/ml-systems-lab/"
 DOI = "https://doi.org/10.5281/zenodo.21867055"
 
 [project.scripts]

@@ -1,0 +1,46 @@
+# Where does decode stop scaling with threads on this CPU?
+#
+# Decode is memory-bound, so throughput climbs with threads until the memory system is
+# saturated and then flattens or falls. On hybrid CPUs (performance plus efficiency
+# cores) it can fall sharply once threads land on the slower cores, and the knee moves
+# with model size. Two model sizes and a fine thread sweep show both.
+#
+# Before running: edit bin_dir, the model paths and the thread list (stop at your
+# logical core count), then `mlsys doctor --config configs/examples/thread-scaling.yaml`.
+#
+# Run:     mlsys run configs/examples/thread-scaling.yaml
+# Report:  mlsys report runs/thread-scaling --full     (the threads figure is the one to read)
+#
+# Run it on an idle machine. The framework flags points whose repetitions spread
+# widely, and on a busy laptop that will be most of them.
+experiment: thread-scaling
+output_dir: runs/thread-scaling
+
+devices:
+  local:
+    kind: local
+    dram_peak_GBs: 50.0                         # <-- EDIT: from `mlsys membw`
+    llamacpp:
+      bin_dir: /path/to/llama.cpp/build/bin     # <-- EDIT
+
+models:
+  small-q4km:
+    quantization: Q4_K_M
+    params: 0.5
+    paths: { local: /path/to/small-Q4_K_M.gguf }   # <-- EDIT
+  large-q4km:
+    quantization: Q4_K_M
+    params: 7.0
+    paths: { local: /path/to/large-Q4_K_M.gguf }   # <-- EDIT
+
+defaults:
+  backend: llamacpp
+  repetitions: 3
+
+matrix:
+  - devices: [local]
+    models: [small-q4km, large-q4km]
+    modes: [throughput]
+    threads: [1, 2, 4, 6, 8, 12, 16]            # <-- EDIT
+    prompt_tokens: [128]
+    output_tokens: [128]

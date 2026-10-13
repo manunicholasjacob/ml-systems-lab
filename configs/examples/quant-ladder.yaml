@@ -1,0 +1,57 @@
+# Which quantization of one model decodes fastest on this machine?
+#
+# One local machine, one model in several GGUF quantizations, two thread counts. The
+# question it answers is the one most people benchmark for: given the bytes each format
+# streams per token, which one is fastest here, and how close does each get to the
+# machine's bandwidth ceiling.
+#
+# Before running:
+#   1. mlsys membw            prints the dram_peak_GBs line for this machine; paste it below
+#   2. edit bin_dir and the model paths (the same model in each quantization)
+#   3. mlsys doctor --config configs/examples/quant-ladder.yaml
+#
+# Run:     mlsys run configs/examples/quant-ladder.yaml
+# Report:  mlsys report runs/quant-ladder --full
+#
+# Quantize every format from the same FP16 source if you can. Files from different
+# publishers can differ in more than the format label, and the difference then lands in
+# the comparison.
+experiment: quant-ladder
+output_dir: runs/quant-ladder
+
+devices:
+  local:
+    kind: local
+    dram_peak_GBs: 50.0                         # <-- EDIT: from `mlsys membw`
+    llamacpp:
+      bin_dir: /path/to/llama.cpp/build/bin     # <-- EDIT
+
+models:
+  m-q4_0:
+    quantization: Q4_0
+    params: 1.5                                 # billions of parameters
+    paths: { local: /path/to/model-Q4_0.gguf }  # <-- EDIT
+  m-q4_k_m:
+    quantization: Q4_K_M
+    params: 1.5
+    paths: { local: /path/to/model-Q4_K_M.gguf }
+  m-q6_k:
+    quantization: Q6_K
+    params: 1.5
+    paths: { local: /path/to/model-Q6_K.gguf }
+  m-q8_0:
+    quantization: Q8_0
+    params: 1.5
+    paths: { local: /path/to/model-Q8_0.gguf }
+
+defaults:
+  backend: llamacpp
+  repetitions: 5
+
+matrix:
+  - devices: [local]
+    models: [m-q4_0, m-q4_k_m, m-q6_k, m-q8_0]
+    modes: [throughput]
+    threads: [4, 8]                             # <-- EDIT: your physical core count is a good second value
+    prompt_tokens: [128]
+    output_tokens: [128]

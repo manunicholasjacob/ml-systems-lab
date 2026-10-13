@@ -420,6 +420,9 @@ tests/               hardware-free tests, including a fake kubectl so the Kubern
 
 ## Documentation
 
+The documentation is also published as a site, with a gallery of the example configs:
+[manunicholasjacob.com/ml-systems-lab](https://manunicholasjacob.com/ml-systems-lab/).
+
 * [docs/API.md](docs/API.md) for using the package from Python rather than the command
   line: the record schema, the device and backend contracts, and the analysis entry
   points, with the stability of each one stated.
@@ -443,9 +446,9 @@ python -m pytest -q
 
 No hardware required. Recorded `llama-bench` output and canned agent
 results stand in for devices, so the suite runs the same on a laptop and in CI, where it
-runs on Linux, macOS and Windows against Python 3.9, 3.12 and 3.13, plus a job that
-installs without numpy, matplotlib or PyYAML and checks the measurement core still
-imports and runs.
+runs on Linux, macOS and Windows against Python 3.9 to 3.14 (3.10 and 3.11 on Linux, the
+interpreter a Raspberry Pi OS device brings), plus a job that installs without numpy,
+matplotlib or PyYAML and checks the measurement core still imports and runs.
 
 The Kubernetes device is covered without a cluster: `tests/fake_kubectl.py` answers from a
 directory, implementing exactly the calls the device makes and exiting non-zero on
@@ -461,8 +464,9 @@ them otherwise.
   [github.com/manunicholasjacob/ml-systems-lab/issues](https://github.com/manunicholasjacob/ml-systems-lab/issues).
   The bug report template asks for the record JSON, which usually contains the answer,
   because it carries the machine state at the time of the run.
-* A question rather than a bug: open an issue anyway and label it a question. There is
-  no separate forum, and a single maintainer answers both.
+* A question rather than a bug: ask in
+  [Discussions](https://github.com/manunicholasjacob/ml-systems-lab/discussions). The
+  same single maintainer answers both.
 * You measured something on hardware not in the table above: the results-gallery issue
   template exists for exactly that, and those records are the most useful contribution
   the project can receive.

@@ -1,5 +1,37 @@
 # Changelog
 
+## Unreleased
+
+No measurement, record format or analysis changes; every result under `results/` keeps
+its records.
+
+### Added
+
+- **Documentation site** at https://manunicholasjacob.com/ml-systems-lab/, built from
+  `docs/` with MkDocs and deployed from `main` (`.github/workflows/docs.yml`, a
+  `--strict` build on every pull request that touches it). `pip install -e ".[docs]"`.
+- **Example config gallery**: six copyable templates in `configs/examples/`
+  (quantization ladder, thread scaling, TTFT latency, a board over SSH, ONNX Runtime on
+  the CPU, two machines at once) and a generated page, `docs/configs.md`, that lists
+  every config with its devices, backend, mode and run count from the real loader.
+  `tests/test_config_gallery.py` loads every shipped config and fails if the page is
+  stale.
+- **Agent image workflow** (`.github/workflows/publish-image.yml`): a portable
+  `GGML_NATIVE=OFF` build for amd64 and arm64 on native runners, smoke-tested, pushed
+  to `ghcr.io/manunicholasjacob/mlsyslab-agent` on a release; pull requests that touch
+  `docker/` build and test it without pushing.
+- Feature-request and pull-request templates, issue-chooser links to Discussions and the
+  docs, and `SECURITY.md` (private vulnerability reporting).
+
+### Changed
+
+- CI also tests Python 3.10 and 3.11 on Linux, so every version the package metadata
+  claims is tested somewhere; 3.11 is what the agent runs under on Raspberry Pi OS and
+  in the agent image.
+- `results/README.md` describes the ONNX vision rows as measurements of those
+  CIFAR-sized files rather than as a speedup factor, and notes that the Pi's int8
+  files are static QDQ exports.
+
 ## 0.2.2 (2026-10-12)
 
 No measurement, record format or analysis changes; every result under `results/` is
@@ -200,10 +232,10 @@ RTX 3050 through ONNX Runtime DirectML.
 - `results/paper12/`: backfilled measurements behind an IEEE Transactions on
   Computers submission; the framework reproduces the paper's fits exactly.
 - `results/pi5-campaign/`: 43-point native campaign (roofline 10.52 GB/s, R^2 0.99;
-  TTFT; per-rail power; ONNX vision with the 11x int8 win on Cortex-A76).
+  TTFT; per-rail power; ONNX vision on CIFAR-sized inputs).
 - `results/laptop-campaign/`: 75-point campaign (0.5B-7B size sweep to 90% of
   bandwidth ceiling, 8-format quant ladder, context-depth decay, TTFT grid, ONNX
-  batch scaling, and int8 losing to fp32 on x86).
+  batch scaling).
 
 ### Quality
 

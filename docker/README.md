@@ -23,6 +23,24 @@ For a portable image:
 docker build --build-arg GGML_NATIVE=OFF -t mlsyslab-agent:0.2.0-portable -f docker/Dockerfile .
 ```
 
+On x86-64 the portable build still uses AVX2 and FMA (llama.cpp's defaults when
+`GGML_NATIVE` is off) but no AVX-512, so it needs a CPU with AVX2: Intel Haswell or AMD
+Excavator and newer, though some budget Pentium and Celeron parts lack it. On arm64 it
+uses the compiler's default target rather than the build machine's. The build takes
+about ten minutes on a 14-core laptop.
+
+Releases from the next one on also publish this portable build, for amd64 and arm64, by
+`.github/workflows/publish-image.yml`:
+
+```bash
+docker pull ghcr.io/manunicholasjacob/mlsyslab-agent:latest
+```
+
+For a measurement you intend to compare against other people's, a published image has
+one advantage over a local build: its digest names the exact bytes, and `K8sDevice`
+records that digest in every run. For the fastest numbers on one machine, build locally
+with the default `GGML_NATIVE=ON`.
+
 ## 2. Load it into the cluster
 
 k3s uses containerd, not the Docker daemon, so a locally built image has to be handed

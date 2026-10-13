@@ -1,0 +1,56 @@
+# One sweep across two machines at once: a laptop and a board over SSH.
+#
+# With --concurrent the scheduler runs each device's queue in parallel, subject to each
+# device's max_concurrency, so the sweep takes about as long as the slower machine
+# rather than the sum of both. A clock check runs first and its offset is recorded.
+# Only transport failures (a dropped SSH connection) are retried; a model that does not
+# fit is a result, not a retry.
+#
+# Before running, edit both device blocks and the model paths, then
+# `mlsys doctor --config configs/examples/two-machines.yaml`.
+#
+# Run:     mlsys run configs/examples/two-machines.yaml --concurrent
+#          (add --prometheus-port 10058 to watch it in Prometheus/Grafana)
+# Report:  mlsys report runs/two-machines --full
+#
+# Two device ids that are really one machine (a host and a pod on it, say) must share a
+# resource_group so they take turns; otherwise they measure each other.
+experiment: two-machines
+output_dir: runs/two-machines
+
+devices:
+  laptop:
+    kind: local
+    dram_peak_GBs: 50.0                         # <-- EDIT: from `mlsys membw`
+    max_concurrency: 1
+    llamacpp:
+      bin_dir: /path/to/llama.cpp/build/bin     # <-- EDIT
+  sbc:
+    host: 192.168.1.50                          # <-- EDIT
+    user: pi                                    # <-- EDIT
+    identity_file: ~/.ssh/id_ed25519            # <-- EDIT
+    python: python3
+    dram_peak_GBs: 14.0                         # <-- EDIT: from `mlsys membw`
+    max_concurrency: 1
+    llamacpp:
+      bin_dir: ~/llama.cpp/build/bin            # <-- EDIT
+
+models:
+  qwen0.5b-q4km:
+    quantization: Q4_K_M
+    params: 0.5
+    paths:
+      laptop: /path/to/qwen2.5-0.5b-instruct-q4_k_m.gguf   # <-- EDIT
+      sbc: ~/models/qwen2.5-0.5b-instruct-q4_k_m.gguf      # <-- EDIT
+
+defaults:
+  backend: llamacpp
+  repetitions: 3
+
+matrix:
+  - devices: [laptop, sbc]
+    models: [qwen0.5b-q4km]
+    modes: [throughput]
+    threads: [1, 2, 4]
+    prompt_tokens: [128]
+    output_tokens: [64]

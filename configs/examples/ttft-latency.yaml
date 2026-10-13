@@ -1,0 +1,38 @@
+# How long does a user wait for the first token, and how does that grow with the prompt?
+#
+# Latency mode drives llama-server over its streaming API and times the first chunk
+# (TTFT) and the last one (end-to-end), which is what an interactive user experiences.
+# llama-bench measures neither. TTFT is mostly prefill, so it grows close to linearly
+# with prompt length; this sweep shows the slope on your hardware.
+#
+# Needs llama-server in bin_dir as well as llama-bench. Before running, edit the paths
+# and run `mlsys doctor --config configs/examples/ttft-latency.yaml`.
+#
+# Run:     mlsys run configs/examples/ttft-latency.yaml
+# Report:  mlsys report runs/ttft-latency --full
+experiment: ttft-latency
+output_dir: runs/ttft-latency
+
+devices:
+  local:
+    kind: local
+    llamacpp:
+      bin_dir: /path/to/llama.cpp/build/bin     # <-- EDIT: must contain llama-server
+
+models:
+  my-model:
+    quantization: Q4_K_M
+    params: 0.5
+    paths: { local: /path/to/model.gguf }       # <-- EDIT
+
+defaults:
+  backend: llamacpp
+  repetitions: 3
+
+matrix:
+  - devices: [local]
+    models: [my-model]
+    modes: [latency]
+    threads: [4]                                # <-- EDIT
+    prompt_tokens: [64, 256, 1024]
+    output_tokens: [64]

@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question or idea
+    url: https://github.com/manunicholasjacob/ml-systems-lab/discussions
+    about: How do I measure X, is this number plausible, what should the framework do next. Ask in Discussions.
+  - name: Documentation
+    url: https://manunicholasjacob.com/ml-systems-lab/
+    about: Quick start, example configs, measurement method and the Python API.

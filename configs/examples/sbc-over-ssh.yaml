@@ -1,0 +1,60 @@
+# Benchmark a single-board computer from your laptop, over SSH.
+#
+# The agent is copied to the board as source and runs there under the board's own
+# Python (3.9 or newer, standard library only), so nothing is installed on the device
+# and no network round trip sits inside a measurement. On a Raspberry Pi 5 the record
+# also carries per-rail PMIC power, temperature and the throttle bits.
+#
+# Before running:
+#   1. key-based SSH to the board works (`ssh -i <key> <user>@<host> true`)
+#   2. a llama.cpp build and a GGUF model are on the board; edit their paths below
+#   3. mlsys membw --device sbc --config configs/examples/sbc-over-ssh.yaml
+#      prints the dram_peak_GBs line; paste it in
+#   4. mlsys doctor --config configs/examples/sbc-over-ssh.yaml
+#
+# Run:     mlsys run configs/examples/sbc-over-ssh.yaml
+# Report:  mlsys report runs/sbc-over-ssh --full
+#
+# Small boards have little RAM and often no swap. Keep max_concurrency at 1 and pick a
+# model that fits with room to spare: a board that runs out of memory can hang hard
+# enough to need a power cycle.
+experiment: sbc-over-ssh
+output_dir: runs/sbc-over-ssh
+
+devices:
+  sbc:
+    host: 192.168.1.50                          # <-- EDIT: any SSH-reachable address
+    user: pi                                    # <-- EDIT
+    identity_file: ~/.ssh/id_ed25519            # <-- EDIT
+    python: python3
+    dram_peak_GBs: 14.0                         # <-- EDIT: from `mlsys membw`
+    max_concurrency: 1
+    llamacpp:
+      bin_dir: ~/llama.cpp/build/bin            # <-- EDIT
+
+models:
+  qwen0.5b-q4km:
+    quantization: Q4_K_M
+    params: 0.5
+    paths: { sbc: ~/models/qwen2.5-0.5b-instruct-q4_k_m.gguf }   # <-- EDIT
+
+defaults:
+  backend: llamacpp
+  repetitions: 3
+
+matrix:
+  # Throughput first, without the power sampler, because sampling perturbs decode.
+  - devices: [sbc]
+    models: [qwen0.5b-q4km]
+    modes: [throughput]
+    threads: [1, 2, 4]
+    prompt_tokens: [128]
+    output_tokens: [64]
+  # Then a separate block for energy per token, with the sampler on.
+  - devices: [sbc]
+    models: [qwen0.5b-q4km]
+    modes: [throughput]
+    threads: [4]
+    prompt_tokens: [128]
+    output_tokens: [64]
+    sample_power: true

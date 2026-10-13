@@ -1,0 +1,82 @@
+# Documentation site, published to GitHub Pages by .github/workflows/docs.yml.
+#
+#   pip install -e ".[docs]"
+#   mkdocs serve            # live preview at http://127.0.0.1:8000/ml-systems-lab/
+#   mkdocs build --strict   # what CI runs; any broken link or missing page fails it
+#
+# Pages that would duplicate a file elsewhere in the repository (the shipped datasets'
+# README, the agent image guide, the changelog) include that file with a snippet
+# rather than copying it, so the site and the repository cannot disagree.
+site_name: ML Systems Lab
+site_description: >-
+  A reproducible benchmarking framework for ML inference across laptops,
+  single-board computers and servers.
+site_author: Manu Nicholas Jacob
+site_url: https://manunicholasjacob.com/ml-systems-lab/
+repo_url: https://github.com/manunicholasjacob/ml-systems-lab
+repo_name: manunicholasjacob/ml-systems-lab
+edit_uri: edit/main/docs/
+copyright: MIT licensed. Cite via doi:10.5281/zenodo.21867055.
+
+docs_dir: docs
+exclude_docs: |
+  memo-decode-cliff.md
+
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - Quick start: quickstart.md
+      - Example configs: configs.md
+  - Guides:
+      - Measurement method: METHOD.md
+      - Several machines at once: DISTRIBUTED.md
+      - Agent image and k3s: container.md
+      - Python API: API.md
+  - Data:
+      - Shipped datasets: datasets.md
+  - Project:
+      - Contributing: contributing.md
+      - Changelog: changelog.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.snippets:
+      base_path: ["."]
+      check_paths: true
+
+validation:
+  nav:
+    omitted_files: warn
+    not_found: warn
+  links:
+    not_found: warn
+    anchors: warn
+    unrecognized_links: warn

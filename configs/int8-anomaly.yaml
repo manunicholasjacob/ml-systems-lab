@@ -1,7 +1,8 @@
 # Falsification study for the cross-ISA int8 observation.
 #
-# Observed in the August 2026 campaigns: int8 ResNet18 ran ~11x FASTER than fp32 on the
-# Cortex-A76 and ~3.6x SLOWER than fp32 on the i7-12700H, same model, same runtime family.
+# Observed in the August 2026 campaigns on CIFAR-sized (32x32) inputs: int8 ResNet18 ran
+# faster than fp32 on the Cortex-A76 and slower than fp32 on the i7-12700H, in the same
+# runtime family. Treat that as an observation to be falsified, not as a result.
 #
 # Candidate explanations to separate, each of which would deflate the result:
 #   H1 (config artifact) the models are S8S8, which x86 VNNI (VPDPBUSD, unsigned x signed)
