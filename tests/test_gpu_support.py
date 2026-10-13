@@ -5,11 +5,14 @@ needs hardware in the room, and that applies to the tests too. Everything here r
 recorded `nvidia-smi` output and stubbed imports, the same way the llama.cpp backend is
 tested off recorded `llama-bench` output.
 
-The one thing these cannot cover is whether the CUDA kernels in `membw.measure_device`
-report a sane ceiling on a real card. That needs a real card and is unrun.
+The CUDA kernels in `membw.measure_device` need a real card. They were first run on an
+RTX 3050 Laptop GPU on 13 October 2026 (issue #1), and that run is kept under
+`tests/recorded/` so the summarising half can be checked against real numbers here.
 """
 
 import dataclasses
+import json
+from pathlib import Path
 
 import pytest
 
@@ -180,9 +183,40 @@ def test_the_working_set_leaves_the_card_usable():
 
     chosen = membw._device_working_set_bytes(FakeTorch(), None)
     assert chosen == membw.DEVICE_WORKING_SET_MB * 1024 * 1024
-    # Asking for more than is free is capped, not honoured.
+    # Asking for more than is free is capped, not honoured, and the cap covers every
+    # buffer measure_device holds at once, not just one of them.
     capped = membw._device_working_set_bytes(FakeTorch(), 64 * 1024)
-    assert capped <= 8 * 1024 ** 3 * (1 - membw.DEVICE_MIN_FREE_FRACTION)
+    budget = 8 * 1024 ** 3 * (1 - membw.DEVICE_MIN_FREE_FRACTION)
+    assert membw.DEVICE_BUFFERS * capped <= budget
+
+
+def test_the_budget_covers_all_three_buffers_on_a_4_gib_card():
+    # The free figure recorded on the RTX 3050 Laptop GPU on 13 October 2026. The old
+    # per-buffer budget chose 1024 MiB here, so 3072 MiB was resident (93% of free), and
+    # a 1300 MiB request was honoured into 3900 MiB, more than was free.
+    free = int(3302.25 * 1024 * 1024)
+
+    class FakeCuda:
+        @staticmethod
+        def mem_get_info():
+            return (free, 4096 * 1024 * 1024)
+
+    class FakeTorch:
+        cuda = FakeCuda()
+
+    for requested in (None, 1300):
+        chosen = membw._device_working_set_bytes(FakeTorch(), requested)
+        assert membw.DEVICE_BUFFERS * chosen <= free * (1 - membw.DEVICE_MIN_FREE_FRACTION)
+        assert chosen // (1024 * 1024) == 825
+
+
+def test_measure_device_allocates_the_number_of_buffers_the_budget_assumes():
+    # If a fourth buffer is added to measure_device, the budget has to know about it.
+    import inspect as _inspect
+    source = _inspect.getsource(membw.measure_device)
+    allocations = (source.count("torch.ones(") + source.count("torch.empty(")
+                   + source.count("torch.empty_like("))
+    assert allocations == membw.DEVICE_BUFFERS
 
 
 def test_a_nearly_full_card_refuses_rather_than_measuring_cache():
@@ -335,8 +369,9 @@ def test_a_successful_device_measurement_reports_status_ok():
     # status read as a failure. That is the likeliest reason the first Kaggle attempt
     # came back with nothing usable.
     import inspect as _inspect
-    source = _inspect.getsource(membw.measure_device)
-    assert '"status": "ok"' in source
+    assert "summarise_device(raw)" in _inspect.getsource(membw.measure_device)
+    assert membw.summarise_device({"sum": [1.0], "max": [1.0], "dot": [1.0],
+                                   "copy": [1.0]})["status"] == "ok"
 
 
 def test_a_cpu_only_torch_is_named_as_such(monkeypatch):
@@ -414,3 +449,56 @@ def test_device_context_survives_a_torch_that_raises(monkeypatch):
     ctx = membw.device_context()
     assert ctx["cuda_available"] is False
     assert "driver mismatch" in ctx["probe_error"]
+
+
+# ------------------------------------- a real run, recorded (issue #1, 13 October 2026)
+
+RECORDED = Path(__file__).parent / "recorded" / "membw_device_rtx3050_laptop_2026-10-13.json"
+
+# Theoretical peak of this card from its own reported clocks: nvidia-smi gives a 5501 MHz
+# memory clock on a 128-bit GDDR6 bus, so 2 x 5501e6 x 16 bytes = 176.03 GB/s. This is the
+# 11 Gbps variant of the part, not the 12 Gbps / 192 GB/s one a spec sheet may list.
+RTX3050_LAPTOP_THEORETICAL_GBs = 2 * 5501e6 * 128 / 8 / 1e9
+
+
+def _recorded():
+    return json.loads(RECORDED.read_text(encoding="utf-8"))
+
+
+def test_the_recorded_run_re_summarises_to_what_it_reported():
+    record = _recorded()
+    again = membw.summarise_device(record["by_kernel_GBs"])
+    for key in ("status", "peak_read_GBs", "best_kernel", "copy_GBs", "stability"):
+        assert again[key] == record[key], key
+
+
+def test_the_recorded_ceiling_is_a_read_kernel_and_never_copy():
+    record = _recorded()
+    assert record["best_kernel"] in ("sum", "max", "dot")
+    reads = [x for k in ("sum", "max", "dot") for x in record["by_kernel_GBs"][k]]
+    assert record["peak_read_GBs"] == max(reads)
+
+
+def test_the_recorded_ceiling_is_a_plausible_fraction_of_the_part():
+    # A ceiling above the theoretical peak would mean the timer measured something other
+    # than the transfer, and one far below it would mean the kernel choice is wrong.
+    record = _recorded()
+    fraction = record["peak_read_GBs"] / RTX3050_LAPTOP_THEORETICAL_GBs
+    assert 0.80 < fraction < 1.0
+    assert record["stability"] >= membw.STABILITY_THRESHOLD
+    assert "unstable" not in record
+
+
+def test_the_recorded_run_stayed_inside_its_memory_budget():
+    record = _recorded()
+    # Both are rounded MiB, so they agree to within the rounding of each buffer.
+    assert abs(record["resident_mb"] - membw.DEVICE_BUFFERS * record["working_set_mb"])         <= membw.DEVICE_BUFFERS
+    assert record["resident_mb"] < record["device_total_MiB"] * (1 - membw.DEVICE_MIN_FREE_FRACTION) + 1
+
+
+def test_summarise_device_ignores_a_copy_faster_than_every_read():
+    raw = {"sum": [100.0, 99.0], "max": [98.0], "dot": [101.0, 100.0], "copy": [150.0]}
+    out = membw.summarise_device(raw)
+    assert out["best_kernel"] == "dot"
+    assert out["peak_read_GBs"] == 101.0
+    assert out["copy_GBs"] == 150.0

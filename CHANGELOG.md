@@ -2,8 +2,10 @@
 
 ## Unreleased
 
-No measurement, record format or analysis changes; every result under `results/` keeps
-its records.
+Every result under `results/` keeps its records. One measurement change, on the
+accelerator path only: `membw --device` now sizes its buffers so all three fit the
+free-memory budget, which shrinks the default working set on cards with less than about
+4 GiB free.
 
 ### Added
 
@@ -22,6 +24,17 @@ its records.
   `docker/` build and test it without pushing.
 - Feature-request and pull-request templates, issue-chooser links to Discussions and the
   docs, and `SECURITY.md` (private vulnerability reporting).
+
+### Fixed
+
+- **`membw --device` first run on a real card, and the defect it found** (issue #1). On an
+  RTX 3050 Laptop GPU the ceiling is 160.1 to 161.2 GB/s across three runs, 91% of the
+  176.03 GB/s its own memory clock implies, with stability above 0.98. The free-memory
+  budget covered one buffer while three are resident, so on that 4 GiB card the default
+  used 93% of free memory and `--mb 1300` oversubscribed it; under WDDM that paged
+  silently and cut `copy_GBs` by a fifth. The budget now covers all three buffers, and
+  the record carries `resident_mb`. The run is kept in `tests/recorded/` and the
+  summarising step (`membw.summarise_device`) is tested against it.
 
 ### Changed
 

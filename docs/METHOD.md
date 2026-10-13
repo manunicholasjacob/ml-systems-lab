@@ -170,23 +170,36 @@ around an asynchronous launch, which would measure the launch. It reaches the de
 through torch, lazily, and reports the ceiling absent rather than falling back to a
 datasheet number, because a wrong denominator is how a roofline lies quietly.
 
-**What is unrun, and what went wrong on the first attempt.** The CUDA kernels in
-`measure_device` have not executed on a real card. The first Kaggle attempt, on a P100,
-produced nothing usable, and the reason turned out to be two defects rather than the
+**First real run, and what went wrong before it.** The kernels first executed on a real
+card on 13 October 2026, an RTX 3050 Laptop GPU (GA107, 4 GiB GDDR6, 128-bit, on AC
+power, under WSL2 with torch 2.14.0+cu130). Three runs gave a ceiling of 160.1 to
+161.2 GB/s with stability 0.988 to 0.994, `dot` winning two of three. nvidia-smi reports
+a 5501 MHz memory clock, so this unit is the 11 Gbps variant and its theoretical peak is
+2 x 5501 MHz x 16 bytes = 176.03 GB/s: the measured ceiling is 91% of it. One run is kept
+in `tests/recorded/` and the summarising code is tested against it.
+
+That run found one defect. The free-memory budget (leave a quarter of free memory alone)
+was applied to one buffer while `measure_device` holds three at once: two read operands
+and the copy destination. With 3302 MiB free the default placed 3072 MiB on the card, and
+`--mb 1300` placed 3900 MiB, more than was free. That did not fail: under WDDM the driver
+paged device memory out, and `copy_GBs` fell from 159 to 128 GB/s with nothing in the
+record to say why. On a Linux driver it would have been an out-of-memory error. The budget
+now covers all three buffers (826 MiB each on this card), and the record carries
+`resident_mb` next to `working_set_mb`.
+
+The earlier Kaggle attempt, on a P100, produced nothing usable for two reasons outside the
 kernels: the success path did not set `status: "ok"` the way the host path does, so a good
 run exited non-zero and wrote a record a caller read as a failure; and
 `torch.cuda.is_available()` returning false was reported as "no CUDA device", which is true
 and useless. It now says which of the two causes it is, because they have different fixes:
 a session with no accelerator attached, or a CPU-only torch build, which is the one that
 wastes an afternoon because pip will replace a CUDA build with a CPU wheel while installing
-something else and say nothing. A failed `--device` run now carries a `context` block with
+something else and say nothing. A failed `--device` run carries a `context` block with
 the torch version, its CUDA build and the device count, so a one-shot notebook cell
 diagnoses itself.
-Everything around them is tested off recorded `nvidia-smi` output and stubbed imports, in
-the usual hardware-free way, and the identity and instantaneous-power paths were checked
-against an RTX 3050. The first datacenter session should start by running
-`python -m mlsyslab.membw --device --json` and sanity-checking the number against the
-part's datasheet before trusting any percentage derived from it.
+A consumer part is one data point. A datacenter session should still start by running
+`python -m mlsyslab.membw --device --json` and checking the number against that part's
+own memory clock and bus width before trusting any percentage derived from it.
 
 ## Containers
 

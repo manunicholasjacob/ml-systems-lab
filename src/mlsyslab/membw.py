@@ -18,7 +18,7 @@ Method (adapted from the validated llama-roofline implementation):
   as unstable. Best-of-N cannot see *constant* background load: the same machine that
   measures 50.7 GB/s idle measured 14.1 GB/s while a package manager ran.
 
-The same discipline is applied to accelerator memory by :func:, which
+The same discipline is applied to accelerator memory by :func:`measure_device`, which
 reaches the device through torch and times on the stream with CUDA events rather than
 around an asynchronous launch. It reports the ceiling as absent when there is no device,
 because a GPU roofline built on a datasheet number has the same failure mode as a CPU one.
@@ -203,6 +203,9 @@ def measure(working_set_mb: Optional[int] = None,
 
 DEVICE_WORKING_SET_MB = 1024
 DEVICE_MIN_FREE_FRACTION = 0.25
+# measure_device holds three buffers of the working-set size at once: the two read
+# operands and the copy destination. The free-memory budget has to cover all three.
+DEVICE_BUFFERS = 3
 
 
 class AcceleratorUnavailable(RuntimeError):
@@ -248,9 +251,17 @@ def device_available() -> bool:
 
 
 def _device_working_set_bytes(torch, requested_mb: Optional[int]) -> int:
-    """Big enough to defeat the last-level cache, small enough to leave the card usable."""
+    """Per-buffer size: big enough to defeat the last-level cache, small enough that all
+    :data:`DEVICE_BUFFERS` buffers together leave the card usable.
+
+    The budget used to be applied to one buffer while three were allocated. On a 4 GiB
+    RTX 3050 Laptop GPU with 3302 MiB free, the default committed 3072 MiB (93% of free),
+    and ``--mb 1300`` committed 3900 MiB, more than was free. Under WDDM that did not fail:
+    the driver paged device memory out and ``copy_GBs`` dropped from 159 to 128 GB/s with
+    nothing in the record to say why. On a Linux driver it is an out-of-memory failure.
+    """
     free, total = torch.cuda.mem_get_info()
-    ceiling = int(free * (1.0 - DEVICE_MIN_FREE_FRACTION))
+    ceiling = int(free * (1.0 - DEVICE_MIN_FREE_FRACTION)) // DEVICE_BUFFERS
     wanted = (requested_mb or DEVICE_WORKING_SET_MB) * 1024 * 1024
     chosen = min(wanted, ceiling)
     if chosen < MIN_WORKING_SET_MB * 1024 * 1024:
@@ -317,23 +328,12 @@ def measure_device(working_set_mb: Optional[int] = None, reps: int = 7,
         del a, b, dst
         torch.cuda.empty_cache()
 
-    best = {k: max(v, default=0.0) for k, v in raw.items()}
-    read_kernels = ("sum", "max", "dot")
-    peak_kernel = max(read_kernels, key=lambda k: best[k])
-    peak = best[peak_kernel]
-    winning = raw[peak_kernel]
-    stability = (_median(winning) / peak) if peak and winning else None
-
     props = torch.cuda.get_device_properties(index)
-    out: Dict[str, Any] = {
-        "status": "ok",
-        "peak_read_GBs": round(peak, 3),
-        "best_kernel": peak_kernel,
-        "copy_GBs": round(best["copy"], 3),
+    out: Dict[str, Any] = summarise_device(raw)
+    out.update({
         "working_set_mb": round(nbytes / 1024 / 1024),
+        "resident_mb": round(DEVICE_BUFFERS * nbytes / 1024 / 1024),
         "reps": reps,
-        "stability": round(stability, 4) if stability is not None else None,
-        "by_kernel_GBs": {k: [round(x, 3) for x in v] for k, v in raw.items()},
         "device_index": index,
         "device_name": props.name,
         "device_total_MiB": round(props.total_memory / 1048576),
@@ -343,7 +343,8 @@ def measure_device(working_set_mb: Optional[int] = None, reps: int = 7,
                    "ceiling is the best read-only kernel and is a measured lower bound"),
         "source": "measured",
         "target": "device",
-    }
+    })
+    stability = out["stability"]
     if stability is not None and stability < STABILITY_THRESHOLD:
         out["unstable"] = True
         out["warning"] = (
@@ -352,6 +353,28 @@ def measure_device(working_set_mb: Optional[int] = None, reps: int = 7,
             f"usually means another tenant. Re-run, and do not put this number in a "
             f"config until it repeats.")
     return out
+
+
+def summarise_device(raw: Dict[str, List[float]]) -> Dict[str, Any]:
+    """Turn per-kernel repetition rates (GB/s) into the ceiling, with no device needed.
+
+    Split out of :func:`measure_device` so a recorded run can be re-summarised and checked
+    in a test. ``copy`` is reported but never chosen as the ceiling.
+    """
+    best = {k: max(v, default=0.0) for k, v in raw.items()}
+    read_kernels = ("sum", "max", "dot")
+    peak_kernel = max(read_kernels, key=lambda k: best.get(k, 0.0))
+    peak = best.get(peak_kernel, 0.0)
+    winning = raw.get(peak_kernel, [])
+    stability = (_median(winning) / peak) if peak and winning else None
+    return {
+        "status": "ok",
+        "peak_read_GBs": round(peak, 3),
+        "best_kernel": peak_kernel,
+        "copy_GBs": round(best.get("copy", 0.0), 3),
+        "stability": round(stability, 4) if stability is not None else None,
+        "by_kernel_GBs": {k: [round(x, 3) for x in v] for k, v in raw.items()},
+    }
 
 
 def device_context() -> Dict[str, Any]:

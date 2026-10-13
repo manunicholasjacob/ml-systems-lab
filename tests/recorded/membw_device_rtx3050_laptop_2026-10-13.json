@@ -1,0 +1,56 @@
+{
+  "status": "ok",
+  "peak_read_GBs": 161.239,
+  "best_kernel": "dot",
+  "copy_GBs": 159.55,
+  "stability": 0.992,
+  "by_kernel_GBs": {
+    "sum": [
+      153.677,
+      157.075,
+      154.576,
+      157.279,
+      159.686,
+      157.896,
+      157.661
+    ],
+    "max": [
+      156.176,
+      158.073,
+      157.192,
+      157.162,
+      158.073,
+      152.046,
+      157.338
+    ],
+    "dot": [
+      159.777,
+      158.846,
+      159.085,
+      160.048,
+      161.239,
+      159.942,
+      161.101
+    ],
+    "copy": [
+      158.965,
+      159.385,
+      158.518,
+      158.726,
+      159.55,
+      158.816,
+      158.786
+    ]
+  },
+  "working_set_mb": 826,
+  "resident_mb": 2477,
+  "reps": 7,
+  "device_index": 0,
+  "device_name": "NVIDIA GeForce RTX 3050 Laptop GPU",
+  "device_total_MiB": 4096,
+  "compute_capability": "8.6",
+  "torch_version": "2.14.0+cu130",
+  "method": "torch read-only reductions on the device, timed with CUDA events; ceiling is the best read-only kernel and is a measured lower bound",
+  "source": "measured",
+  "target": "device"
+}
