@@ -43,7 +43,9 @@ classifiers = [
 dependencies = ["numpy>=1.20", "matplotlib>=3.4", "PyYAML>=5.4"]
 
 [project.optional-dependencies]
-dev = ["pytest>=7"]
+# psutil is test-only: the Windows per-core CPU path is cross-checked against it. The
+# measurement core itself stays standard-library-only.
+dev = ["pytest>=7", "psutil>=5.9"]
 onnx = ["onnxruntime>=1.15"]
 # The documentation site (mkdocs.yml). Upper bounds because MkDocs 2 and Material 10
 # are not drop-in upgrades; CI builds with --strict, so a bad combination fails there.

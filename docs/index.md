@@ -47,7 +47,7 @@ each other. The records behind this figure ship in the repository; see
 | End-to-end request latency | same streaming path, submit to last token |
 | Single-inference latency (mean, p50/p95/p99) | ONNX Runtime, timed in-process on the device |
 | Memory | peak RSS, plus free-memory and swap state around every run |
-| CPU utilization | `/proc/stat` deltas (Linux), `GetSystemTimes` (Windows), per-core where available |
+| CPU utilization | `/proc/stat` deltas (Linux), `GetSystemTimes` + `NtQuerySystemInformation` (Windows), per core when it pools to the aggregate |
 | Temperature and throttling | sysfs thermal zones, Pi throttle bitmask, in the record not a side file |
 | Power and energy | Raspberry Pi PMIC per-rail (core vs DRAM split), Intel RAPL where present, NVIDIA GPUs through whichever instrument the part supports, named in the record |
 | Derived | decode bandwidth, roofline utilization %, energy per token |

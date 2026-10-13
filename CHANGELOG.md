@@ -36,6 +36,20 @@ free-memory budget, which shrinks the default working set on cards with less tha
   the record carries `resident_mb`. The run is kept in `tests/recorded/` and the
   summarising step (`membw.summarise_device`) is tested against it.
 
+- **Per-core CPU utilisation on Windows** (issue #2). `cpu_util_pct_per_core` was absent
+  on every Windows record because `GetSystemTimes` is system-wide only. Each logical
+  processor's idle, kernel and user times now come from
+  `NtQuerySystemInformation(SystemProcessorPerformanceInformation)` through ctypes, with
+  no new runtime dependency. The list is reported only when, pooled, it gives the
+  `GetSystemTimes` busy fraction to within 2 points over the same interval (on any
+  platform), and it is absent on machines with more than 64 logical processors, where that
+  call sees one processor group. On a 20-thread laptop the pooled and aggregate figures
+  agree to under half a point over 0.5 s, a core pinned busy reads 100.0, and the
+  per-core figures track psutil's to a mean of 1.2 to 1.6 points, psutil reading higher
+  because it adds interrupt and DPC time that kernel time already contains. A recorded
+  snapshot pair from that laptop is in `tests/recorded/`; psutil joins the `dev` extra
+  for the live cross-check.
+
 ### Changed
 
 - CI also tests Python 3.10 and 3.11 on Linux, so every version the package metadata
