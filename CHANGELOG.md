@@ -71,6 +71,7 @@ records names the discrete card rather than the first adapter listed.
 - Package metadata gives the licence as the SPDX expression `MIT` with `license-files`
   (PEP 639) instead of the deprecated table and classifier, which setuptools warned about
   on every build; the build now needs setuptools 77 or later.
+- README: a Related tools section linking the sibling measurement tools, one line each.
 
 ## 0.2.2 (2026-10-12)
 
