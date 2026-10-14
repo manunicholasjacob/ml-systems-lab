@@ -297,6 +297,44 @@ def gpus() -> List[Dict[str, Any]]:
     return found
 
 
+# Display adapters that are not a GPU anyone benchmarks on: the driverless fallback,
+# remote-desktop and virtual-monitor drivers.
+_NOT_A_GPU = re.compile(
+    r"Microsoft Basic|Remote Display|Remote Desktop|Virtual|Indirect Display|"
+    r"DisplayLink|Mirror Driver",
+    re.IGNORECASE,
+)
+# Names that only discrete cards carry. Integrated parts share the vendor but not these:
+# "Intel(R) Arc(TM) Graphics" (Meteor Lake) and "AMD Radeon(TM) 780M Graphics" are
+# integrated; "Intel(R) Arc(TM) A770" and "AMD Radeon RX 7600M XT" are not.
+_DISCRETE_GPU = re.compile(
+    r"NVIDIA|GeForce|Quadro|Tesla|"
+    r"Radeon(\(TM\))?\s+(RX|PRO|VII)\b|FirePro|"
+    r"Arc(\(TM\))?\s+[AB]\d{3}",
+    re.IGNORECASE,
+)
+
+
+def _pick_display_adapter(names: List[str]) -> Optional[str]:
+    """The adapter a benchmark most likely ran on, from the order Windows lists them.
+
+    Windows lists adapters in bus order, which on many laptops puts the integrated GPU
+    first, so the first name is not the card a run used. A discrete card wins, then any
+    real adapter, then a virtual one; ties keep the listed order.
+    """
+    names = [n.strip() for n in names if n and n.strip()]
+    if not names:
+        return None
+
+    def rank(name: str) -> int:
+        if _NOT_A_GPU.search(name):
+            return 0
+        return 2 if _DISCRETE_GPU.search(name) else 1
+
+    best = max(rank(n) for n in names)
+    return next(n for n in names if rank(n) == best)
+
+
 def gpu() -> Optional[str]:
     """Best-effort GPU name, kept as a plain string for the existing schema field.
 
@@ -308,12 +346,12 @@ def gpu() -> Optional[str]:
     if platform.system() == "Windows":
         out = _run(["wmic", "path", "win32_VideoController", "get", "name", "/value"])
         if out:
-            names = [m.strip() for m in re.findall(r"Name=(.+)", out) if m.strip()]
-            if names:
-                return names[0]
+            picked = _pick_display_adapter(re.findall(r"Name=(.+)", out))
+            if picked:
+                return picked
         out = _powershell_cim("(Get-CimInstance Win32_VideoController).Name")
         if out:
-            return out.splitlines()[0].strip()
+            return _pick_display_adapter(out.splitlines())
     return None
 
 

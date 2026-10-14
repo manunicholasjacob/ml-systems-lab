@@ -50,6 +50,13 @@ free-memory budget, which shrinks the default working set on cards with less tha
   snapshot pair from that laptop is in `tests/recorded/`; psutil joins the `dev` extra
   for the live cross-check.
 
+- **The GPU name on Windows without `nvidia-smi` prefers a discrete card.** The fallback
+  took the first adapter Windows listed, which on many laptops is the integrated GPU, so
+  a record could name the Intel or AMD iGPU while the run used the discrete card. A
+  discrete name (NVIDIA, Radeon RX/Pro, Arc A/B-series) now wins, then any real adapter,
+  then the Basic Display and virtual-monitor drivers; ties keep the listed order. Records
+  where `nvidia-smi` answered are unaffected.
+
 ### Changed
 
 - CI also tests Python 3.10 and 3.11 on Linux, so every version the package metadata
@@ -58,6 +65,9 @@ free-memory budget, which shrinks the default working set on cards with less tha
 - `results/README.md` describes the ONNX vision rows as measurements of those
   CIFAR-sized files rather than as a speedup factor, and notes that the Pi's int8
   files are static QDQ exports.
+- Package metadata gives the licence as the SPDX expression `MIT` with `license-files`
+  (PEP 639) instead of the deprecated table and classifier, which setuptools warned about
+  on every build; the build now needs setuptools 77 or later.
 
 ## 0.2.2 (2026-10-12)
 
