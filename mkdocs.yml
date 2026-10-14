@@ -56,6 +56,7 @@ nav:
       - Python API: API.md
   - Data:
       - Shipped datasets: datasets.md
+      - Pi 5 power data index: DATA_INDEX.md
   - Project:
       - Contributing: contributing.md
       - Changelog: changelog.md
