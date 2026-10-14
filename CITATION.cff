@@ -35,8 +35,8 @@ abstract: >-
   analysis layer turns a directory of records into publication-quality tables and
   figures.
 license: MIT
-version: 0.2.2
-date-released: "2026-10-12"
+version: 0.2.3
+date-released: "2026-10-31"
 keywords:
   - benchmarking
   - inference

@@ -2,10 +2,13 @@
 
 ## Unreleased
 
+## 0.2.3 (2026-10-31)
+
 Every result under `results/` keeps its records. One measurement change, on the
 accelerator path only: `membw --device` now sizes its buffers so all three fit the
 free-memory budget, which shrinks the default working set on cards with less than about
-4 GiB free.
+4 GiB free. One metadata change: on Windows without `nvidia-smi`, the `gpu` field of new
+records names the discrete card rather than the first adapter listed.
 
 ### Added
 
