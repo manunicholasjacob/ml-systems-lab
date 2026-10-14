@@ -78,6 +78,14 @@ its inference backend, nothing else.
 - [Agent image and k3s](container.md): building the container and running sweeps in pods.
 - [Python API](API.md): reading records and analysing them from your own code.
 
+## Related tools
+
+Other tools by the same author for people measuring local LLM inference:
+
+- [llama-roofline](https://github.com/manunicholasjacob/llama-roofline): is your llama.cpp decode memory-bandwidth-bound? One command measures the ceiling and compares.
+- [qgemv-roofline](https://github.com/manunicholasjacob/qgemv-roofline): quantized GEMV kernels for batch-1 LLM decode, written from scratch and measured against a bandwidth roof the repository measures for itself.
+- [gguf-faultscope](https://github.com/manunicholasjacob/gguf-faultscope): what one flipped bit does to a quantized GGUF model, and where it has to land to matter.
+
 ## Citing
 
 Archived on Zenodo; the concept DOI

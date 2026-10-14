@@ -478,6 +478,14 @@ them otherwise.
 
 Response time is a single maintainer's, so days rather than hours.
 
+## Related tools
+
+Other tools by the same author for people measuring local LLM inference:
+
+- [llama-roofline](https://github.com/manunicholasjacob/llama-roofline): is your llama.cpp decode memory-bandwidth-bound? One command measures the ceiling and compares.
+- [qgemv-roofline](https://github.com/manunicholasjacob/qgemv-roofline): quantized GEMV kernels for batch-1 LLM decode, written from scratch and measured against a bandwidth roof the repository measures for itself.
+- [gguf-faultscope](https://github.com/manunicholasjacob/gguf-faultscope): what one flipped bit does to a quantized GGUF model, and where it has to land to matter.
+
 ## Citing
 
 Archived on Zenodo; the concept DOI [10.5281/zenodo.21867055](https://doi.org/10.5281/zenodo.21867055)
