@@ -27,6 +27,9 @@ records names the discrete card rather than the first adapter listed.
   `docker/` build and test it without pushing.
 - Feature-request and pull-request templates, issue-chooser links to Discussions and the
   docs, and `SECURITY.md` (private vulnerability reporting).
+- **Raspberry Pi 5 power data index** (`docs/DATA_INDEX.md`): which files in this and four
+  artifact repositories hold PMIC power records, their fields, units, sampling period,
+  licence and DOI. No new measurements.
 
 ### Fixed
 
