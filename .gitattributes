@@ -1,0 +1,2 @@
+# Recorded tool output is kept byte-for-byte; MANIFEST.json pins each file by SHA-256.
+tests/recorded/openvino/* -text

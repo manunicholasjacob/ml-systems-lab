@@ -1,0 +1,10 @@
+[Step 1/11] Parsing and validating input arguments
+[ INFO ] Parsing input parameters
+[ ERROR ] -nstreams, -nthreads and -pin options are fine tune options. To use them you should explicitely set -hint option to none. This is not OpenVINO limitation (those options can be used in OpenVINO together), but a benchmark_app UI rule.
+Traceback (most recent call last):
+  File "C:\llmpc\venv-ov311\Lib\site-packages\openvino\tools\benchmark\main.py", line 99, in main
+    args, is_network_compiled = parse_and_check_command_line()
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\llmpc\venv-ov311\Lib\site-packages\openvino\tools\benchmark\main.py", line 60, in parse_and_check_command_line
+    raise Exception("-nstreams, -nthreads and -pin options are fine tune options. To use them you " \
+Exception: -nstreams, -nthreads and -pin options are fine tune options. To use them you should explicitely set -hint option to none. This is not OpenVINO limitation (those options can be used in OpenVINO together), but a benchmark_app UI rule.

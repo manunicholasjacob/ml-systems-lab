@@ -1,0 +1,36 @@
+[Step 1/11] Parsing and validating input arguments
+[ INFO ] Parsing input parameters
+[Step 2/11] Loading OpenVINO Runtime
+[ INFO ] OpenVINO:
+[ INFO ] Build ................................. 2026.4.1-22982-e213a147257-releases/2026/4
+[ INFO ] 
+[ INFO ] Device info:
+[ INFO ] CPU
+[ INFO ] Build ................................. 2026.4.1-22982-e213a147257-releases/2026/4
+[ INFO ] 
+[ INFO ] 
+[Step 3/11] Setting device configuration
+[ WARNING ] Performance hint was not explicitly specified in command line or config file. Device(CPU) performance hint will be set to PerformanceMode.THROUGHPUT.
+[Step 4/11] Reading model files
+[ INFO ] Loading model files
+[ ERROR ] Exception from src\inference\src\cpp\core.cpp:84:
+Check 'util::directory_exists(path) || util::file_exists(path)' failed at src\frontends\common\src\frontend.cpp:120:
+FrontEnd API failed with GeneralFailure:
+onnx: Could not open the file: "C:\llmpc\onnx-ov\does_not_exist.onnx"
+
+Traceback (most recent call last):
+  File "C:\llmpc\venv-ov311\Lib\site-packages\openvino\tools\benchmark\main.py", line 415, in main
+    model = benchmark.read_model(args.path_to_model)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\llmpc\venv-ov311\Lib\site-packages\openvino\tools\benchmark\benchmark.py", line 70, in read_model
+    return self.core.read_model(model_filename, weights_filename)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\llmpc\venv-ov311\Lib\site-packages\openvino\_ov_api.py", line 603, in read_model
+    return Model(super().read_model(model, weights, config))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Exception from src\inference\src\cpp\core.cpp:84:
+Check 'util::directory_exists(path) || util::file_exists(path)' failed at src\frontends\common\src\frontend.cpp:120:
+FrontEnd API failed with GeneralFailure:
+onnx: Could not open the file: "C:\llmpc\onnx-ov\does_not_exist.onnx"
+
+
