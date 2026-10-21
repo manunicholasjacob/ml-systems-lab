@@ -117,23 +117,42 @@ def cmd_delete(state: dict) -> int:
     return 0
 
 
+def map_task_paths(payload: bytes, root: str, synced: str) -> bytes:
+    """Point a task's PYTHONPATH at the fake container filesystem.
+
+    A task that names the package root names a path inside the container. Here the agent
+    runs on the host, so that path is translated to where the fake keeps it.
+    """
+    try:
+        task = json.loads(payload.decode("utf-8"))
+    except ValueError:
+        return payload
+    env = task.get("env") if isinstance(task, dict) else None
+    if isinstance(env, dict) and isinstance(env.get("PYTHONPATH"), str):
+        env["PYTHONPATH"] = env["PYTHONPATH"].replace(root, synced)
+        return json.dumps(task).encode("utf-8")
+    return payload
+
+
 def run_agent(script: str) -> int:
     """Run the real agent, the way the container would, on this machine."""
     parts = shlex.split(script)
     # cd '<root>' && PYTHONPATH='<root>' exec python3 -m mlsyslab.agent -
     root = parts[1]
-    payload = sys.stdin.buffer.read()
+    synced = host_path(root)
+    payload = map_task_paths(sys.stdin.buffer.read(), root, synced)
     env = dict(os.environ)
-    env["PYTHONPATH"] = os.pathsep.join(
-        [os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src"))]
-        + ([env["PYTHONPATH"]] if env.get("PYTHONPATH") else [])
-    )
-    env["FAKE_CONTAINER_ROOT"] = root
+    # Import the agent from the copy the device synced, as the container does. Taking it
+    # from the checkout instead would let a file missing from the sync go unnoticed, and
+    # would make any test that imports from the package root pass only because the
+    # checkout happens to be installed.
+    env["PYTHONPATH"] = synced
     done = subprocess.run([sys.executable, "-m", "mlsyslab.agent", "-"],
                           input=payload, stdout=subprocess.PIPE,
-                          stderr=subprocess.PIPE, env=env)
+                          stderr=subprocess.PIPE, env=env, cwd=synced)
     output = done.stdout
     if load_state().get("truncate_result"):
+        sys.path.insert(0, synced)
         from mlsyslab.agent import RESULT_BEGIN
 
         marker = output.find(RESULT_BEGIN.encode())
