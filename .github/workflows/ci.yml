@@ -18,7 +18,13 @@ jobs:
           # macos-latest runners are arm64; 3.9 wheels are not published for it.
           - os: macos-latest
             python-version: "3.9"
+          # ubuntu-latest moved to 26.04 on 19 Oct 2026, which has no Python 3.9 build
+          # for setup-python. 3.9 runs on 24.04 instead (see the include below).
+          - os: ubuntu-latest
+            python-version: "3.9"
         include:
+          - os: ubuntu-24.04
+            python-version: "3.9"
           # pyproject.toml claims every version from 3.9 to 3.14, so each one is tested
           # somewhere. 3.11 matters most: it is the system Python on Raspberry Pi OS
           # Bookworm and in the agent image, so it is what the agent actually runs under.
