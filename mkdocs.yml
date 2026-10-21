@@ -19,8 +19,6 @@ edit_uri: edit/main/docs/
 copyright: MIT licensed. Cite via doi:10.5281/zenodo.21867055.
 
 docs_dir: docs
-exclude_docs: |
-  memo-decode-cliff.md
 
 theme:
   name: material

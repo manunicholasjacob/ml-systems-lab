@@ -97,7 +97,7 @@ mlsys run configs/examples/sbc-over-ssh.yaml --dry-run
 
 Where does decode stop scaling with threads on this CPU?
 
-Decode is memory-bound, so throughput climbs with threads until the memory system is saturated and then flattens or falls. On hybrid CPUs (performance plus efficiency cores) it can fall sharply once threads land on the slower cores, and the knee moves with model size. Two model sizes and a fine thread sweep show both.
+Decode is memory-bound, so throughput climbs with threads until the memory system is saturated and then flattens. On hybrid CPUs (performance plus efficiency cores) it can keep rising past the performance-core count, and past the peak the run-to-run spread widens sharply. Two model sizes and a fine thread sweep show where the peak sits.
 
 | | |
 |---|---|

@@ -109,7 +109,7 @@ The laptop half of the same night (75 points, `configs/laptop-overnight.yaml`), 
 behind an automated idle gate after another workload finished:
 
 - size sweep 0.5B to 7B at five thread counts; the 7B reaches 90% of the measured
-  bandwidth ceiling, and 20 threads (E-cores engaged) costs the 0.5B 37% of decode
+  bandwidth ceiling
 - the canonical FP16-sourced 8-format quantization ladder: Q4_0 is the throughput
   winner (117.6 tok/s), Q6_K and Q8_0 saturate 98% of bandwidth, and the I-quants
   keep pace with K-quants on x86
