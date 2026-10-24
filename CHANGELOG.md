@@ -223,7 +223,9 @@ controls and limitations in its REPORT.md.
 
 ### Changed
 
-- Version 0.1.2 was a PyPI-only republish of 0.1.1 and has no separate entry here.
+- Version 0.1.2 was tagged in git (`v0.1.2`) but never reached PyPI, which goes
+  0.1.1 then 0.2.0. It has no separate entry here. An earlier note in this file
+  described it as a PyPI-only republish of 0.1.1, which is the wrong way round.
 
 ## 0.1.1 (2026-08-13)
 

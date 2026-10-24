@@ -1,0 +1,507 @@
+{
+  "what": "Raw stdout/stderr of OpenVINO benchmark_app, unedited, for writing and testing an OpenVINO parser (issue #3).",
+  "openvino_build": "2026.4.1-22982-e213a147257-releases/2026/4",
+  "host": "Windows 11, Intel Core i7-12700H (CPU), Intel Iris Xe (GPU.0), laptop on mains power",
+  "model": {
+    "file": "tiny_cnn.onnx",
+    "built_by": "python tools/make_tiny_cnn_onnx.py tiny_cnn.onnx (seed 0, onnx 1.19.1)",
+    "sha256": "22ab4f075a30f0b72d4bd56f10b27cb000c70e1a4c6881c73f7af6982ed81d60"
+  },
+  "reps": "5 reps of each configuration, interleaved with ONNX Runtime runs of the same model; odd reps ran OpenVINO first, even reps ONNX Runtime first. cpu_missing_model and cpu_hint_with_nthreads are deliberate failures (missing file; -nthreads rejected without -hint none), for the error paths.",
+  "runs": [
+    {
+      "id": "cpu_sync_4threads_rep1",
+      "rep": 1,
+      "order": "ov_first",
+      "device": "CPU",
+      "argv": [
+        "benchmark_app",
+        "-m",
+        "C:/llmpc/onnx-ov/tiny_cnn.onnx",
+        "-d",
+        "CPU",
+        "-hint",
+        "none",
+        "-nstreams",
+        "1",
+        "-nthreads",
+        "4",
+        "-api",
+        "sync",
+        "-shape",
+        "[1,3,32,32]",
+        "-niter",
+        "2000"
+      ],
+      "exit_code": 0,
+      "start_utc": "2026-10-15T18:21:31Z",
+      "end_utc": "2026-10-15T18:21:32Z",
+      "files": {
+        "stdout": "cpu_sync_4threads_rep1.stdout"
+      }
+    },
+    {
+      "id": "cpu_throughput_async_rep1",
+      "rep": 1,
+      "order": "ov_first",
+      "device": "CPU",
+      "argv": [
+        "benchmark_app",
+        "-m",
+        "C:/llmpc/onnx-ov/tiny_cnn.onnx",
+        "-d",
+        "CPU",
+        "-hint",
+        "throughput",
+        "-api",
+        "async",
+        "-shape",
+        "[1,3,32,32]",
+        "-t",
+        "10"
+      ],
+      "exit_code": 0,
+      "start_utc": "2026-10-15T18:21:32Z",
+      "end_utc": "2026-10-15T18:21:43Z",
+      "files": {
+        "stdout": "cpu_throughput_async_rep1.stdout"
+      }
+    },
+    {
+      "id": "gpu0_latency_sync_rep1",
+      "rep": 1,
+      "order": "ov_first",
+      "device": "GPU.0",
+      "argv": [
+        "benchmark_app",
+        "-m",
+        "C:/llmpc/onnx-ov/tiny_cnn.onnx",
+        "-d",
+        "GPU.0",
+        "-hint",
+        "latency",
+        "-api",
+        "sync",
+        "-shape",
+        "[1,3,32,32]",
+        "-niter",
+        "2000"
+      ],
+      "exit_code": 0,
+      "start_utc": "2026-10-15T18:21:44Z",
+      "end_utc": "2026-10-15T18:21:47Z",
+      "files": {
+        "stdout": "gpu0_latency_sync_rep1.stdout"
+      }
+    },
+    {
+      "id": "cpu_sync_4threads_rep2",
+      "rep": 2,
+      "order": "ort_first",
+      "device": "CPU",
+      "argv": [
+        "benchmark_app",
+        "-m",
+        "C:/llmpc/onnx-ov/tiny_cnn.onnx",
+        "-d",
+        "CPU",
+        "-hint",
+        "none",
+        "-nstreams",
+        "1",
+        "-nthreads",
+        "4",
+        "-api",
+        "sync",
+        "-shape",
+        "[1,3,32,32]",
+        "-niter",
+        "2000"
+      ],
+      "exit_code": 0,
+      "start_utc": "2026-10-15T18:21:49Z",
+      "end_utc": "2026-10-15T18:21:51Z",
+      "files": {
+        "stdout": "cpu_sync_4threads_rep2.stdout"
+      }
+    },
+    {
+      "id": "cpu_throughput_async_rep2",
+      "rep": 2,
+      "order": "ort_first",
+      "device": "CPU",
+      "argv": [
+        "benchmark_app",
+        "-m",
+        "C:/llmpc/onnx-ov/tiny_cnn.onnx",
+        "-d",
+        "CPU",
+        "-hint",
+        "throughput",
+        "-api",
+        "async",
+        "-shape",
+        "[1,3,32,32]",
+        "-t",
+        "10"
+      ],
+      "exit_code": 0,
+      "start_utc": "2026-10-15T18:21:51Z",
+      "end_utc": "2026-10-15T18:22:02Z",
+      "files": {
+        "stdout": "cpu_throughput_async_rep2.stdout"
+      }
+    },
+    {
+      "id": "gpu0_latency_sync_rep2",
+      "rep": 2,
+      "order": "ort_first",
+      "device": "GPU.0",
+      "argv": [
+        "benchmark_app",
+        "-m",
+        "C:/llmpc/onnx-ov/tiny_cnn.onnx",
+        "-d",
+        "GPU.0",
+        "-hint",
+        "latency",
+        "-api",
+        "sync",
+        "-shape",
+        "[1,3,32,32]",
+        "-niter",
+        "2000"
+      ],
+      "exit_code": 0,
+      "start_utc": "2026-10-15T18:22:02Z",
+      "end_utc": "2026-10-15T18:22:05Z",
+      "files": {
+        "stdout": "gpu0_latency_sync_rep2.stdout"
+      }
+    },
+    {
+      "id": "cpu_sync_4threads_rep3",
+      "rep": 3,
+      "order": "ov_first",
+      "device": "CPU",
+      "argv": [
+        "benchmark_app",
+        "-m",
+        "C:/llmpc/onnx-ov/tiny_cnn.onnx",
+        "-d",
+        "CPU",
+        "-hint",
+        "none",
+        "-nstreams",
+        "1",
+        "-nthreads",
+        "4",
+        "-api",
+        "sync",
+        "-shape",
+        "[1,3,32,32]",
+        "-niter",
+        "2000"
+      ],
+      "exit_code": 0,
+      "start_utc": "2026-10-15T18:22:05Z",
+      "end_utc": "2026-10-15T18:22:07Z",
+      "files": {
+        "stdout": "cpu_sync_4threads_rep3.stdout"
+      }
+    },
+    {
+      "id": "cpu_throughput_async_rep3",
+      "rep": 3,
+      "order": "ov_first",
+      "device": "CPU",
+      "argv": [
+        "benchmark_app",
+        "-m",
+        "C:/llmpc/onnx-ov/tiny_cnn.onnx",
+        "-d",
+        "CPU",
+        "-hint",
+        "throughput",
+        "-api",
+        "async",
+        "-shape",
+        "[1,3,32,32]",
+        "-t",
+        "10"
+      ],
+      "exit_code": 0,
+      "start_utc": "2026-10-15T18:22:07Z",
+      "end_utc": "2026-10-15T18:22:18Z",
+      "files": {
+        "stdout": "cpu_throughput_async_rep3.stdout"
+      }
+    },
+    {
+      "id": "gpu0_latency_sync_rep3",
+      "rep": 3,
+      "order": "ov_first",
+      "device": "GPU.0",
+      "argv": [
+        "benchmark_app",
+        "-m",
+        "C:/llmpc/onnx-ov/tiny_cnn.onnx",
+        "-d",
+        "GPU.0",
+        "-hint",
+        "latency",
+        "-api",
+        "sync",
+        "-shape",
+        "[1,3,32,32]",
+        "-niter",
+        "2000"
+      ],
+      "exit_code": 0,
+      "start_utc": "2026-10-15T18:22:18Z",
+      "end_utc": "2026-10-15T18:22:20Z",
+      "files": {
+        "stdout": "gpu0_latency_sync_rep3.stdout"
+      }
+    },
+    {
+      "id": "cpu_sync_4threads_rep4",
+      "rep": 4,
+      "order": "ort_first",
+      "device": "CPU",
+      "argv": [
+        "benchmark_app",
+        "-m",
+        "C:/llmpc/onnx-ov/tiny_cnn.onnx",
+        "-d",
+        "CPU",
+        "-hint",
+        "none",
+        "-nstreams",
+        "1",
+        "-nthreads",
+        "4",
+        "-api",
+        "sync",
+        "-shape",
+        "[1,3,32,32]",
+        "-niter",
+        "2000"
+      ],
+      "exit_code": 0,
+      "start_utc": "2026-10-15T18:22:23Z",
+      "end_utc": "2026-10-15T18:22:24Z",
+      "files": {
+        "stdout": "cpu_sync_4threads_rep4.stdout"
+      }
+    },
+    {
+      "id": "cpu_throughput_async_rep4",
+      "rep": 4,
+      "order": "ort_first",
+      "device": "CPU",
+      "argv": [
+        "benchmark_app",
+        "-m",
+        "C:/llmpc/onnx-ov/tiny_cnn.onnx",
+        "-d",
+        "CPU",
+        "-hint",
+        "throughput",
+        "-api",
+        "async",
+        "-shape",
+        "[1,3,32,32]",
+        "-t",
+        "10"
+      ],
+      "exit_code": 0,
+      "start_utc": "2026-10-15T18:22:24Z",
+      "end_utc": "2026-10-15T18:22:36Z",
+      "files": {
+        "stdout": "cpu_throughput_async_rep4.stdout"
+      }
+    },
+    {
+      "id": "gpu0_latency_sync_rep4",
+      "rep": 4,
+      "order": "ort_first",
+      "device": "GPU.0",
+      "argv": [
+        "benchmark_app",
+        "-m",
+        "C:/llmpc/onnx-ov/tiny_cnn.onnx",
+        "-d",
+        "GPU.0",
+        "-hint",
+        "latency",
+        "-api",
+        "sync",
+        "-shape",
+        "[1,3,32,32]",
+        "-niter",
+        "2000"
+      ],
+      "exit_code": 0,
+      "start_utc": "2026-10-15T18:22:36Z",
+      "end_utc": "2026-10-15T18:22:39Z",
+      "files": {
+        "stdout": "gpu0_latency_sync_rep4.stdout"
+      }
+    },
+    {
+      "id": "cpu_sync_4threads_rep5",
+      "rep": 5,
+      "order": "ov_first",
+      "device": "CPU",
+      "argv": [
+        "benchmark_app",
+        "-m",
+        "C:/llmpc/onnx-ov/tiny_cnn.onnx",
+        "-d",
+        "CPU",
+        "-hint",
+        "none",
+        "-nstreams",
+        "1",
+        "-nthreads",
+        "4",
+        "-api",
+        "sync",
+        "-shape",
+        "[1,3,32,32]",
+        "-niter",
+        "2000"
+      ],
+      "exit_code": 0,
+      "start_utc": "2026-10-15T18:22:39Z",
+      "end_utc": "2026-10-15T18:22:40Z",
+      "files": {
+        "stdout": "cpu_sync_4threads_rep5.stdout"
+      }
+    },
+    {
+      "id": "cpu_throughput_async_rep5",
+      "rep": 5,
+      "order": "ov_first",
+      "device": "CPU",
+      "argv": [
+        "benchmark_app",
+        "-m",
+        "C:/llmpc/onnx-ov/tiny_cnn.onnx",
+        "-d",
+        "CPU",
+        "-hint",
+        "throughput",
+        "-api",
+        "async",
+        "-shape",
+        "[1,3,32,32]",
+        "-t",
+        "10"
+      ],
+      "exit_code": 0,
+      "start_utc": "2026-10-15T18:22:40Z",
+      "end_utc": "2026-10-15T18:22:51Z",
+      "files": {
+        "stdout": "cpu_throughput_async_rep5.stdout"
+      }
+    },
+    {
+      "id": "gpu0_latency_sync_rep5",
+      "rep": 5,
+      "order": "ov_first",
+      "device": "GPU.0",
+      "argv": [
+        "benchmark_app",
+        "-m",
+        "C:/llmpc/onnx-ov/tiny_cnn.onnx",
+        "-d",
+        "GPU.0",
+        "-hint",
+        "latency",
+        "-api",
+        "sync",
+        "-shape",
+        "[1,3,32,32]",
+        "-niter",
+        "2000"
+      ],
+      "exit_code": 0,
+      "start_utc": "2026-10-15T18:22:51Z",
+      "end_utc": "2026-10-15T18:22:54Z",
+      "files": {
+        "stdout": "gpu0_latency_sync_rep5.stdout"
+      }
+    },
+    {
+      "id": "cpu_missing_model",
+      "rep": 0,
+      "order": "na",
+      "device": "CPU",
+      "argv": [
+        "benchmark_app",
+        "-m",
+        "C:/llmpc/onnx-ov/does_not_exist.onnx",
+        "-d",
+        "CPU",
+        "-niter",
+        "10"
+      ],
+      "exit_code": 1,
+      "start_utc": "2026-10-15T18:22:56Z",
+      "end_utc": "2026-10-15T18:22:57Z",
+      "files": {
+        "stdout": "cpu_missing_model.stdout"
+      }
+    },
+    {
+      "id": "cpu_hint_with_nthreads",
+      "rep": 0,
+      "order": "na",
+      "device": "CPU",
+      "argv": [
+        "benchmark_app",
+        "-m",
+        "C:/llmpc/onnx-ov/tiny_cnn.onnx",
+        "-d",
+        "CPU",
+        "-hint",
+        "latency",
+        "-api",
+        "sync",
+        "-nthreads",
+        "4",
+        "-shape",
+        "[1,3,32,32]",
+        "-niter",
+        "10"
+      ],
+      "exit_code": 1,
+      "start_utc": "2026-10-15T18:22:57Z",
+      "end_utc": "2026-10-15T18:22:58Z",
+      "files": {
+        "stdout": "cpu_hint_with_nthreads.stdout"
+      }
+    }
+  ],
+  "sha256": {
+    "cpu_hint_with_nthreads.stdout": "370a879972c0a2f6a92d5f329588c49d036182bd13d1f92e8ba1f606bbf4c119",
+    "cpu_missing_model.stdout": "e2d9e3b182af6e670df085efb43271c430a63449ce5fdb631e79ddff869dd409",
+    "cpu_sync_4threads_rep1.stdout": "469046b28764acb68932b29d2719ffc92d5a4aa7d9bc1c455949cff9fe974d99",
+    "cpu_sync_4threads_rep2.stdout": "eb54f7aa3acc2658ef8c9f2d91ae96d49ad697d3e3ecd1857498c1d4143751db",
+    "cpu_sync_4threads_rep3.stdout": "0406bce3447d7064d28adcb1c69941b171184c76b7d0653c3b19aee85066ac74",
+    "cpu_sync_4threads_rep4.stdout": "55e52269ee74249532bf10fd21734b967ab6578d247f758aef71e28424757915",
+    "cpu_sync_4threads_rep5.stdout": "521afb2704ce4e9c14685ecf646040e9c344ded64ad5c09d519b6790479f2e65",
+    "cpu_throughput_async_rep1.stdout": "b3d8be21d622d3b0d6cc44cf3aecfa625dcc7e1f4ab01437991d40104252aea3",
+    "cpu_throughput_async_rep2.stdout": "dddbd22395f9dd6cbc986d2229a2eeaada74521d805dfe4efaff0fc63a3fb725",
+    "cpu_throughput_async_rep3.stdout": "f40a20ff855eace0ebb223800f298b9e88d9f72b02ce11690fd9d91053908590",
+    "cpu_throughput_async_rep4.stdout": "6bcc5e2d50571ed16565ed31fb80064c76db5f6d3db418065f516d9c0287b519",
+    "cpu_throughput_async_rep5.stdout": "39762e7c3833995cabff25cccdf281622c4f05cdb4ebac7a1218868bd3a595dd",
+    "gpu0_latency_sync_rep1.stdout": "4205104cea8ff38d691e2c5d0ad30e4a75c1771c203119a65afdaf312b8622f5",
+    "gpu0_latency_sync_rep2.stdout": "c60f2fb74cc22d3e79fb2580109e3eb711d8d5eeed809c78cf391e8099c93458",
+    "gpu0_latency_sync_rep3.stdout": "85ce0887a252f6397c88008d2f6335c625a526f0e75d16af89a5cc6ff9cd6dbb",
+    "gpu0_latency_sync_rep4.stdout": "7066fe0cdafadea433539d8082c6253edc23eeeccead64463c8f9e7284820671",
+    "gpu0_latency_sync_rep5.stdout": "5b49c466cf65d78410b9f85da9392a5656533894d979b39a58f99276ea895211"
+  }
+}

@@ -432,8 +432,6 @@ The documentation is also published as a site, with a gallery of the example con
   failure is handled, and how to watch it.
 * [docker/README.md](docker/README.md) for building the agent image and standing up
   k3s, including the three things that bite on Windows and WSL2.
-* [docs/memo-decode-cliff.md](docs/memo-decode-cliff.md) for a worked study built with
-  the framework, from config to conclusion.
 * `mlsys <command> --help` for the command line, and `results/README.md` for what is in
   each shipped dataset and how it was collected.
 
