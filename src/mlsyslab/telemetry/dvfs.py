@@ -9,6 +9,7 @@ records that fact rather than aborting.
 from __future__ import annotations
 
 import glob
+import shlex
 import subprocess
 from typing import List, Optional
 
@@ -26,8 +27,13 @@ def _sudo_write(glob_pattern: str, value: str) -> bool:
 
     One sudo call for the whole set, not one per CPU: on an 8 core board that is the
     difference between one process spawn and eight, and this runs between measurements.
+
+    `value` reaches here from the config file (`governor:`), so it is quoted: an
+    external reviewer of a withdrawn PyPI advisory pointed out on 24 Oct 2026 that
+    it was being interpolated into a privileged shell as written. The glob is a
+    module constant and must stay unquoted for the shell to expand it.
     """
-    script = f"for f in {glob_pattern}; do echo {value} > $f; done"
+    script = f'for f in {glob_pattern}; do echo {shlex.quote(value)} > "$f"; done'
     try:
         done = subprocess.run(
             ["sudo", "-n", "sh", "-c", script],
