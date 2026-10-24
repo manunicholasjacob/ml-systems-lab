@@ -43,6 +43,9 @@ jobs:
           python -m pip install -e ".[dev]"
       - name: Run tests
         run: python -m pytest -q
+        env:
+          # The pinned-core live check needs an idle machine; CI runners are.
+          MLSYSLAB_LIVE_TIMING: "1"
       - name: Smoke-test the CLI
         run: |
           mlsys --version

@@ -7,6 +7,12 @@ per-core list is only reported when, pooled, it gives the aggregate's busy fract
 The first group of tests runs anywhere, off a snapshot pair recorded on a 20-thread
 Windows laptop with one busy loop pinned to logical processor 0. The second group needs
 Windows and reads the live counters; the psutil cross-check also needs psutil.
+
+One of the live tests pins a busy loop to logical processor 0 and asserts that core
+reads at least 90% busy. That holds on an otherwise idle machine and fails on a loaded
+one, because the pinned core is then shared with whatever else is running, so it is
+gated behind MLSYSLAB_LIVE_TIMING=1 rather than left to fail for the wrong reason. CI
+sets it; a reviewer running `pytest -q` on a working laptop does not have to.
 """
 
 import json
@@ -22,6 +28,10 @@ from mlsyslab.telemetry import cpu
 
 RECORDED = Path(__file__).parent / "recorded" / "windows_cpu_times_20_logical_2026-10-13.json"
 on_windows = pytest.mark.skipif(platform.system() != "Windows", reason="needs Windows")
+timing_sensitive = pytest.mark.skipif(
+    os.environ.get("MLSYSLAB_LIVE_TIMING") != "1",
+    reason="timing-sensitive live measurement; set MLSYSLAB_LIVE_TIMING=1 on an idle machine",
+)
 
 
 def _recorded():
@@ -132,6 +142,7 @@ def _spin(seconds):
 
 
 @on_windows
+@timing_sensitive
 def test_live_per_core_matches_psutil_and_sees_a_pinned_load():
     psutil = pytest.importorskip("psutil")
     proc = multiprocessing.Process(target=_spin, args=(3.0,))
