@@ -31,6 +31,23 @@ records names the discrete card rather than the first adapter listed.
   artifact repositories hold PMIC power records, their fields, units, sampling period,
   licence and DOI. No new measurements.
 
+### Security
+
+- **The `governor:` config value is quoted before it reaches a privileged shell**
+  (`telemetry/dvfs.py`). `_sudo_write` runs `sudo -n sh -c` on a script it builds, and the
+  governor name arrived from the config file unquoted, so a config carrying
+  `ondemand; touch /tmp/x` ran the second half as root on a machine set up with the
+  passwordless sudo this module documents. `shlex.quote` closes it, and it adds nothing to
+  an ordinary governor name, so the script for a real sweep is unchanged.
+  `tests/test_dvfs.py` is new and one of its cases runs the generated script against a
+  fake sysfs tree to show the hostile value is written rather than executed.
+
+  Raised by 0x73746F66 while reviewing `GCVE-110-PYPI-2026-017962`, which classified
+  versions 0.2.1 and 0.2.2 as malware. That record was **withdrawn as a false positive on
+  24 October 2026**, with an OpenVEX `not_affected` statement; the two lines it matched were
+  a README example and an sdist-only test. This hardening is the one real finding the
+  review produced, and no released version was ever malicious.
+
 ### Fixed
 
 - **`membw --device` first run on a real card, and the defect it found** (issue #1). On an

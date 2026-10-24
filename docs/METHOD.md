@@ -99,7 +99,7 @@ discovered during analysis.
 ```
 git clone <repo> && cd ml-systems-lab
 pip install -e ".[dev]"
-python -m pytest -q          # 360 tests, no hardware needed
+python -m pytest -q          # 365 tests, no hardware needed
 mlsys probe                  # what this machine is and can measure
 mlsys run configs/smoke.yaml # ~1 minute wiring check
 ```
