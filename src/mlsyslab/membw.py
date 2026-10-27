@@ -128,8 +128,15 @@ def measure(working_set_mb: Optional[int] = None,
     a32 = np.ones(n32, dtype=np.float32)
     b32 = np.ones(n32, dtype=np.float32)
 
+    from .telemetry import contention
+
     results: Dict[str, Dict[str, float]] = {}
     raw: Dict[str, Dict[str, List[float]]] = {}
+    # Watch what else is on the machine over exactly the window we measure in. Steady
+    # competition depresses every repetition equally, so the stability flag below cannot
+    # see it; telemetry/contention.py has the two measured cases.
+    cpu_before = contention.snapshot()
+    procs_before = contention.process_table()
     try:
         for nt in thread_counts:
             sl64 = [(i * n64 // nt, (i + 1) * n64 // nt) for i in range(nt)]
@@ -149,6 +156,10 @@ def measure(working_set_mb: Optional[int] = None,
             results[str(nt)] = {k: max(v, default=0.0) for k, v in cell.items()}
     finally:
         del a64, b64, a32, b32
+    foreign = contention.foreign_fraction(cpu_before, contention.snapshot())
+    offenders = (contention.top_foreign(procs_before, contention.process_table())
+                 if foreign is not None and foreign >= contention.CONTENTION_THRESHOLD
+                 else [])
 
     peak, best_kernel, best_threads = 0.0, None, None
     for nt, row in results.items():
@@ -172,15 +183,25 @@ def measure(working_set_mb: Optional[int] = None,
         "by_threads": results,
         "method": ("numpy threaded read kernels (sum/max/dot); ceiling is the best "
                    "read-only kernel, a measured lower bound on true peak"),
+        "foreign_cpu_fraction": foreign,
     }
+    warnings: List[str] = []
     if stability is not None and stability < STABILITY_THRESHOLD:
         out["unstable"] = True
-        out["warning"] = (
+        warnings.append(
             f"repetitions varied by {100 * (1 - stability):.0f}% around the best result, "
             "which usually means something else was using the machine. The ceiling is "
             "probably too low, so every utilisation percentage derived from it would be "
             "too high. Re-run on an idle machine."
         )
+    contended = contention.describe(foreign, offenders)
+    if contended:
+        out["contended"] = True
+        if offenders:
+            out["busiest_other_processes"] = [name for name, _ in offenders]
+        warnings.append(contended)
+    if warnings:
+        out["warning"] = " Also, ".join(warnings) if len(warnings) > 1 else warnings[0]
     return out
 
 
