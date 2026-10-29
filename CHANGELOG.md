@@ -82,6 +82,11 @@ records names the discrete card rather than the first adapter listed.
 
 ### Changed
 
+- **Manuscript wording that cannot go stale.** The `.zenodo.json` description and two
+  README lines said a manuscript was "under review at the IEEE Internet of Things
+  Journal". A Zenodo record is permanent, so a review state frozen into it stops being
+  true at the first decision. Both now give the dated fact instead: submitted to that
+  journal in September 2026.
 - CI also tests Python 3.10 and 3.11 on Linux, so every version the package metadata
   claims is tested somewhere; 3.11 is what the agent runs under on Raspberry Pi OS and
   in the agent image.
