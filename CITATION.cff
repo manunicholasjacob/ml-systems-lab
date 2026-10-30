@@ -15,8 +15,8 @@ identifiers:
     value: "10.5281/zenodo.21867055"
     description: "Concept DOI, always resolves to the latest archived version"
   - type: doi
-    value: "10.5281/zenodo.23329333"
-    description: "DOI for version v0.2.2, the most recent archived release"
+    value: "10.5281/zenodo.23822450"
+    description: "DOI for version v0.2.3, the most recent archived release"
 abstract: >-
   A benchmarking framework for ML inference across heterogeneous hardware. One
   configuration file and one command execute an experiment matrix across any mix of
