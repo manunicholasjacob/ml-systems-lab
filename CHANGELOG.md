@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-## 0.2.3 (2026-10-31)
+## 0.2.3 (2026-10-30)
 
 Every result under `results/` keeps its records. One measurement change, on the
 accelerator path only: `membw --device` now sizes its buffers so all three fit the
