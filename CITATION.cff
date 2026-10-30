@@ -36,7 +36,7 @@ abstract: >-
   figures.
 license: MIT
 version: 0.2.3
-date-released: "2026-10-31"
+date-released: "2026-10-30"
 keywords:
   - benchmarking
   - inference
