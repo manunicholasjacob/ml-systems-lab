@@ -21,7 +21,7 @@ import threading
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
-from . import cpu, dvfs, power, thermal
+from . import contention, cpu, dvfs, power, thermal
 
 DEFAULT_SAMPLE_HZ = 10.0
 
@@ -33,6 +33,7 @@ def capabilities() -> Dict[str, bool]:
     caps.update(power.describe())
     caps.update(cpu.describe())
     caps.update(dvfs.describe())
+    caps.update(contention.describe_capability())
     return caps
 
 
@@ -178,6 +179,6 @@ class TelemetrySession:
 
 
 __all__ = [
-    "TelemetrySession", "capabilities", "cpu", "dvfs", "power", "thermal",
+    "TelemetrySession", "capabilities", "contention", "cpu", "dvfs", "power", "thermal",
     "DEFAULT_SAMPLE_HZ",
 ]

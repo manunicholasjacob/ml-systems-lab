@@ -358,9 +358,12 @@ def execute(task: Dict[str, Any]) -> Dict[str, Any]:
         except Exception as exc:  # a crashed agent must still report, not hang the campaign
             result = {"status": "failed", "error": f"{type(exc).__name__}: {exc}"}
         finally:
+            # Restore whenever this run changed the governor, not only when the config
+            # remembered to ask. `restore_governor` still overrides the target for a
+            # caller that wants a specific one; with nothing to restore this is a no-op.
             restore = (task.get("prepare") or {}).get("restore_governor")
-            if restore:
-                dvfs.restore(restore)
+            if restore or (task.get("prepare") or {}).get("governor"):
+                dvfs.restore(restore if restore else None)
 
     result.setdefault("warnings", [])
     result["warnings"] = list(result["warnings"]) + warnings

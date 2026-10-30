@@ -55,7 +55,21 @@ def current_governor() -> Optional[str]:
     return None
 
 
+_PREVIOUS_GOVERNOR: Optional[str] = None
+
+
 def set_governor(governor: str) -> bool:
+    """Set the governor on every CPU, remembering what was there the first time.
+
+    The remembered value is what `restore()` puts back. Capturing it here rather than
+    at the call site means a caller cannot forget, which is the failure this module had:
+    a config that set `governor:` without also setting `restore_governor` left the
+    machine on the new governor after the run, and the next measurement on that board
+    inherited it.
+    """
+    global _PREVIOUS_GOVERNOR
+    if _PREVIOUS_GOVERNOR is None:
+        _PREVIOUS_GOVERNOR = current_governor()
     return _sudo_write(_GOVERNOR_GLOB, governor)
 
 
@@ -74,9 +88,21 @@ def available_frequencies_khz() -> Optional[List[int]]:
         return None
 
 
-def restore(governor: str = "schedutil") -> bool:
-    """Put the machine back the way it was found. Always call this after a sweep."""
-    return set_governor(governor)
+def restore(governor: Optional[str] = None) -> bool:
+    """Put the machine back the way it was found. Always call this after a sweep.
+
+    With no argument this restores the governor observed before the first
+    `set_governor` call. It used to default to "schedutil", which is not what every
+    board runs: a Raspberry Pi 5 on Raspberry Pi OS runs `ondemand`, so the old default
+    moved the machine to a governor it had never been on while claiming to put it back.
+
+    Returns False when there is nothing to restore, which is the honest answer when the
+    governor was never changed.
+    """
+    target = governor if governor is not None else _PREVIOUS_GOVERNOR
+    if not target:
+        return False
+    return set_governor(target)
 
 
 def describe() -> dict:

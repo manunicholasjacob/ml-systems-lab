@@ -107,3 +107,48 @@ def test_the_generated_script_writes_the_value_instead_of_running_it(tmp_path):
 
     assert target.read_text().strip() == hostile
     assert not marker.exists()
+
+
+def test_restore_puts_back_what_was_there_not_a_guess(monkeypatch):
+    """restore() used to default to schedutil, which is wrong on a Pi running ondemand."""
+    dvfs._PREVIOUS_GOVERNOR = None
+    monkeypatch.setattr(dvfs, "current_governor", lambda: "ondemand")
+    calls = _capture(monkeypatch)
+
+    dvfs.set_governor("performance")
+    dvfs.restore()
+
+    assert "echo performance >" in calls[0][4]
+    assert "echo ondemand >" in calls[1][4], "restore must put back ondemand, not schedutil"
+
+
+def test_restore_is_a_noop_when_nothing_was_changed(monkeypatch):
+    dvfs._PREVIOUS_GOVERNOR = None
+    calls = _capture(monkeypatch)
+    assert dvfs.restore() is False
+    assert calls == [], "restore must not touch the machine it never changed"
+
+
+def test_restore_honours_an_explicit_target(monkeypatch):
+    dvfs._PREVIOUS_GOVERNOR = None
+    monkeypatch.setattr(dvfs, "current_governor", lambda: "ondemand")
+    calls = _capture(monkeypatch)
+
+    dvfs.set_governor("performance")
+    dvfs.restore("powersave")
+
+    assert "echo powersave >" in calls[1][4]
+
+
+def test_the_first_observation_wins(monkeypatch):
+    """Two set_governor calls must not overwrite the originally observed governor."""
+    dvfs._PREVIOUS_GOVERNOR = None
+    seen = iter(["ondemand", "performance"])
+    monkeypatch.setattr(dvfs, "current_governor", lambda: next(seen))
+    calls = _capture(monkeypatch)
+
+    dvfs.set_governor("performance")
+    dvfs.set_governor("userspace")
+    dvfs.restore()
+
+    assert "echo ondemand >" in calls[-1][4]

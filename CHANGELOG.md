@@ -12,6 +12,29 @@ records names the discrete card rather than the first adapter listed.
 
 ### Added
 
+- **`membw` reports whether the ceiling was measured on a busy machine.** New
+  `telemetry/contention.py` measures the share of the machine's CPU capacity used by other
+  processes over the measurement window, and `membw.measure` returns it as
+  `foreign_cpu_fraction`. Above 10% the result also carries `contended`,
+  `busiest_other_processes` and a `warning`. `telemetry.capabilities()` gains
+  `cpu_contention`.
+
+  This covers the case the `membw` docstring already named and the stability flag cannot
+  see: steady background load depresses every repetition equally, so the scatter stays
+  small while the ceiling is wrong. Two measured instances now. A package manager cost this
+  lab a factor of 3.6. On a Galaxy M21 running Android's background dexopt job, the same
+  kernels with the same arguments read 6.35 GB/s against 9.32 GB/s on the same quiet
+  device, 32% low, at stability 0.85 and 0.87. That job runs at nice 10, which yields the
+  CPU but not memory bandwidth, and Android schedules it when the device is idle and
+  charging, which is the state a person creates in order to benchmark a phone.
+
+  Works on Linux, Android and Windows, because it divides by the aggregate CPU counter,
+  which already sums over every logical processor, so the platform's units cancel and no
+  clock rate or core count is needed. Process names are Linux and Android only; Windows
+  still reports the fraction. `None` means the check could not run, never that the machine
+  was idle. Observed: idle Pi 5 0.017, Windows laptop in ordinary use 0.205 to 0.228,
+  Android with dexopt around 0.6.
+
 - **Documentation site** at https://manunicholasjacob.com/ml-systems-lab/, built from
   `docs/` with MkDocs and deployed from `main` (`.github/workflows/docs.yml`, a
   `--strict` build on every pull request that touches it). `pip install -e ".[docs]"`.
