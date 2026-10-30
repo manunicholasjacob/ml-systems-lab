@@ -73,6 +73,18 @@ records names the discrete card rather than the first adapter listed.
 
 ### Fixed
 
+- **The governor is put back the way it was found, and put back without being asked**
+  (`telemetry/dvfs.py`, `agent.py`). Two defects, found because a Raspberry Pi 5 was left on
+  the `performance` governor after a run and the next measurement inherited it. `restore()`
+  defaulted to `schedutil` while its docstring promised to put the machine back the way it was
+  found; Raspberry Pi OS runs `ondemand`, so on that board the default moved the machine to a
+  governor it had never been on. `set_governor` now records what it finds the first time it is
+  called and `restore()` with no argument puts that back, returning `False` rather than guessing
+  when there is nothing recorded. Separately, the agent restored only when the config also set
+  `restore_governor`, so a config that set `governor:` and omitted it left the machine changed;
+  it now restores whenever it changed the governor, and `restore_governor` still overrides the
+  target for a caller who wants a specific one.
+
 - **`membw --device` first run on a real card, and the defect it found** (issue #1). On an
   RTX 3050 Laptop GPU the ceiling is 160.1 to 161.2 GB/s across three runs, 91% of the
   176.03 GB/s its own memory clock implies, with stability above 0.98. The free-memory
